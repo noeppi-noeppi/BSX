@@ -8,6 +8,8 @@ import bsx.compiler.ast.BsClass;
 import bsx.compiler.ast.Member;
 import bsx.compiler.ast.Program;
 import bsx.compiler.ast.Statement;
+import bsx.compiler.ast.lang.Echo;
+import bsx.compiler.ast.literal.StringLiteral;
 import bsx.compiler.ast.member.Function;
 import bsx.compiler.ast.member.MemberModifier;
 import bsx.compiler.ast.member.Property;
@@ -17,6 +19,7 @@ import bsx.compiler.jvm.util.CompilerContext;
 import bsx.compiler.lvt.BlockScope;
 import bsx.compiler.lvt.Scope;
 import bsx.type.ClassType;
+import bsx.type.StringType;
 import bsx.util.Bytecode;
 import bsx.value.NoValue;
 import org.objectweb.asm.Opcodes;
@@ -52,6 +55,12 @@ public class JvmCompiler {
         List<Function> functions = program.contents().stream()
                 .flatMap(Program.Entry::asFunction)
                 .toList();
+        
+        if (classes.isEmpty() && statements.isEmpty() && functions.isEmpty() && scope == null) {
+            // See https://twitter.com/lang_bs/status/536838147712507904
+            statements = List.of(new Echo(new StringLiteral(StringType.ASCII, "Hello, world!\n")));
+        }
+        
         if (statements.isEmpty() && functions.isEmpty() && scope == null) {
             return new CompiledProgram(null, classes);
         } else {

@@ -1,6 +1,6 @@
 # BSX
 
-BSX is a programming language inspired by the joke programming language *BS* created by @markrendle.
+BSX is a programming language inspired by the joke programming language *BS* created by [@markrendle](https://github.com/markrendle).
 BSX does not claim to be a correct implementation of BS, however it tries to be as close to BS as possible.
 The main goal is to provide the same developer experience as BS.
 

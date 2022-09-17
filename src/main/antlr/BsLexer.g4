@@ -58,21 +58,21 @@ ARE_PROBABLY: 'areProbably';
 INTEGER: '-'?[0-9]+;
 FLOAT: '-'?[0-9]+('.'[0-9]+)?([eE][0-9]+)?;
 
-UNTERMINATED_ANSI: '\'\'' (~['\\\r\n] | '\\' (. | EOF))*;
+fragment UNTERMINATED_ANSI: '\'\'' (~['\\\r\n] | '\\' (. | EOF))*;
 ANSI: UNTERMINATED_ANSI '\'\'';
 
-UNTERMINATED_ASCII: '\'' (~['\\\r\n] | '\\' (. | EOF))*;
+fragment UNTERMINATED_ASCII: '\'' (~['\\\r\n] | '\\' (. | EOF))*;
 ASCII: UNTERMINATED_ASCII '\'';
 
-UNTERMINATED_EBCDIC: '""' (~["\\\r\n] | '\\' (. | EOF))*;
+fragment UNTERMINATED_EBCDIC: '""' (~["\\\r\n] | '\\' (. | EOF))*;
 EBCDIC: UNTERMINATED_EBCDIC '""';
 
-UNTERMINATED_DBCS: '"' (~["\\\r\n] | '\\' (. | EOF))*;
+fragment UNTERMINATED_DBCS: '"' (~["\\\r\n] | '\\' (. | EOF))*;
 DBCS: UNTERMINATED_DBCS '"';
 
 START_UTF256_INTERP: '««' -> pushMode(INTERPOLATED_STRING);
 
-UNTERMINATED_UTF256: '«' (~[«»\\\r\n] | '\\' (. | EOF))*;
+fragment UNTERMINATED_UTF256: '«' (~[«»\\\r\n] | '\\' (. | EOF))*;
 UTF256: UNTERMINATED_UTF256 '»';
 
 WHITESPACE: [ \t\n] -> skip;

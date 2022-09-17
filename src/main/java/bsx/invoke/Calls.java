@@ -46,7 +46,7 @@ public class Calls {
                 BSX.UNSAFE.throwException(e);
                 throw new Error();
             }
-            if (handle != null) handle = handle.bindTo(selfValue);
+            if (handle != null) handle = handle.bindTo(self);
         }
         if (handle == null) {
             try {

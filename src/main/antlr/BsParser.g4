@@ -2,7 +2,7 @@ parser grammar BsParser;
 @header { package bsx.compiler.parser.antlr; }
 options { tokenVocab=BsLexer; }
 
-program: code*;
+program: code* EOF;
 code: class | function | statement;
 
 class: modifiers CLASS typeName super? COLON START_BLOCK member+ END_BLOCK;

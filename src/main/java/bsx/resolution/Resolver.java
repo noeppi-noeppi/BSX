@@ -20,6 +20,9 @@ public class Resolver {
     
     public static final String SPECIAL_NAME = "BS_RESOLVE";
     
+    // The first arg for instance methods is ignored and won't be converted to BsValue
+    // Caller has to do that conversion manually.
+    
     @Nullable
     public static MethodHandle resolve(Class<?> target, String name, List<BsValue> args, boolean instance, boolean special) throws ReflectiveOperationException {
         return resolve(target, target, name, args, instance, special);
@@ -213,7 +216,7 @@ public class Resolver {
                 }
             }
             if (matching.size() == 1) {
-                return matching.get(0);
+                return withValueArgs(matching.get(0), instance);
             } else {
                 // None or multiple. Nothing we can do.
                 return null;
@@ -243,7 +246,7 @@ public class Resolver {
     // that are then converted into the required type.
     private static MethodHandle withValueArgs(MethodHandle handle, boolean instance) throws NoSuchMethodException, IllegalAccessException {
         MethodHandle[] filters = new MethodHandle[handle.type().parameterCount()];
-        for (int i = 0; i < handle.type().parameterCount(); i++) {
+        for (int i = instance ? 1 : 0; i < handle.type().parameterCount(); i++) {
             filters[i] = ValueHelper.toJava(handle.type().parameterType(i));
         }
         return MethodHandles.filterArguments(handle, 0, filters);

@@ -4,6 +4,7 @@ import bs.Predef;
 import bsx.BsType;
 import bsx.BsValue;
 import bsx.resolution.Resolver;
+import bsx.util.MethodUtil;
 import bsx.value.NoValue;
 import bsx.value.ObjectValue;
 
@@ -80,7 +81,16 @@ public final class ClassType implements BsType {
     @Nullable
     @Override
     public MethodHandle resolve(String name, List<BsValue> args, boolean instance, boolean special) throws ReflectiveOperationException {
-        return Resolver.resolve(this.cls(), name, args, instance, special);
+        if (!instance || (!args.isEmpty() && args.get(0) instanceof ObjectValue ov && this.cls().isAssignableFrom(ov.value.getClass()))) {
+            MethodHandle handle = Resolver.resolve(this.cls(), name, args, instance, special);
+            if (instance) {
+                return MethodUtil.boundThis(handle, ((ObjectValue) args.get(0)).value);
+            } else {
+                return handle;
+            }
+        } else {
+            return null;
+        }
     }
 
     @Override
