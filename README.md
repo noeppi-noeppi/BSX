@@ -8,7 +8,7 @@ The main goal is to provide the same developer experience as BS.
 
 BSX is based on this talk here, it should give you a good introduction to the language.
 
-<iframe width="756" height="425" src="https://www.youtube.com/embed/vcFBwt1nu2U" title="The Worst Programming Language Ever - Mark Rendle - NDC Oslo 2021" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![The Worst Programming Language Ever - Mark Rendle - NDC Oslo 2021](https://img.youtube.com/vi/vcFBwt1nu2U/0.jpg)](https://www.youtube.com/watch?v=vcFBwt1nu2U)
 
 However, there are a few notable differences.
 
