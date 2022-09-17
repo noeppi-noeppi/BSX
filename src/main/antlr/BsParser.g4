@@ -53,12 +53,12 @@ operatorLiteralInfixNoComma: INFIX_OPERATOR_NO_COMMA_NO_MINUS | MINUS_OPERATOR;
 operatorLiteralPrefix: BANG_OPERATOR | MINUS_OPERATOR;
 
 expression: expressionNoOperator (operatorLiteralInfix expressionNoOperator)*;
-expressionNoComma: expressionNoOperator (operatorLiteralInfixNoComma  expressionNoOperator)*;
+expressionNoComma: expressionNoOperator (operatorLiteralInfixNoComma expressionNoOperator)*;
 parenExpression: START_GROUP expression END_GROUP;
-expressionNoOperator: applyCall | expressionNoApply;
+expressionNoOperator: typeCast | prefixOperator | applyCall | expressionNoApply;
 expressionNoApply: instanceProperty | staticProperty | parentProperty | expressionNoProperty;
-expressionNoProperty: parenExpression | literal | objectCreation | typeCast | prefixOperator
-  | inlineIncremetVariableFirst | inlineIncremetVariableLast | variable | name;
+expressionNoProperty: parenExpression | literal | objectCreation | inlineIncremetVariableFirst
+  | inlineIncremetVariableLast | variable | name;
 
 paramList: START_GROUP (expressionNoComma (COMMA expressionNoComma)*)? END_GROUP;
 
@@ -95,7 +95,7 @@ parentProperty: PARENT STATIC_ACCESS IDENT;
 
 prefixOperator: operatorLiteralPrefix expressionNoOperator;
 objectCreation: NEW stype paramList;
-typeCast: START_GROUP stype END_GROUP expressionNoOperator;
+typeCast: START_GROUP stype END_GROUP (parenExpression | expressionNoOperator);
 
 inlineIncremetVariableFirst: (INLINE_PLUS | INLINE_MINUS) variable;
 inlineIncremetVariableLast: variable (INLINE_PLUS | INLINE_MINUS);

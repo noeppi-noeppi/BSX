@@ -21,7 +21,7 @@ public class Operators {
             if (sv1.getType() == StringType.ASCII) {
                 return StringValue.concatWith(sv2.getType(), sv1, sv2);
             } else if (sv2.getType() == StringType.ASCII) {
-                return StringValue.concatWith(sv2.getType(), sv1, sv2);
+                return StringValue.concatWith(sv1.getType(), sv1, sv2);
             } else if (sv1.getType() == sv2.getType()) {
                 return StringValue.concatWith(sv1.getType(), sv1, sv2);
             } else {
@@ -86,8 +86,8 @@ public class Operators {
         else if (op1 instanceof FloatingValue fv) num1 = fv.value;
         
         double num2 = Double.NaN;
-        if (op1 instanceof IntegerValue iv) num2 = iv.value;
-        else if (op1 instanceof FloatingValue fv) num2 = fv.value;
+        if (op2 instanceof IntegerValue iv) num2 = iv.value;
+        else if (op2 instanceof FloatingValue fv) num2 = fv.value;
         
         return BoolValue.of(num1 < num2);
     }
@@ -98,8 +98,8 @@ public class Operators {
         else if (op1 instanceof FloatingValue fv) num1 = fv.value;
 
         double num2 = Double.NaN;
-        if (op1 instanceof IntegerValue iv) num2 = iv.value;
-        else if (op1 instanceof FloatingValue fv) num2 = fv.value;
+        if (op2 instanceof IntegerValue iv) num2 = iv.value;
+        else if (op2 instanceof FloatingValue fv) num2 = fv.value;
 
         return BoolValue.of(num1 <= num2);
     }

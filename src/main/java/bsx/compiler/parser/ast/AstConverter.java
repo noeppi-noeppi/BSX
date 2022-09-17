@@ -297,6 +297,8 @@ public class AstConverter {
     
     private Expression expression(BsParser.ExpressionNoOperatorContext ctx) {
         if (ctx.applyCall() != null) return this.applyCall(ctx.applyCall());
+        if (ctx.typeCast() != null) return typeCast(ctx.typeCast());
+        if (ctx.prefixOperator() != null) return new UnaryOperator(this.unaryOperator(ctx.prefixOperator().operatorLiteralPrefix()), this.expression(ctx.prefixOperator().expressionNoOperator()));
         if (ctx.expressionNoApply() != null) return this.expression(ctx.expressionNoApply());
         throw new IncompatibleClassChangeError();
     }
@@ -325,8 +327,6 @@ public class AstConverter {
         if (ctx.parenExpression() != null) return this.expression(ctx.parenExpression().expression());
         if (ctx.literal() != null) return this.literal(ctx.literal());
         if (ctx.objectCreation() != null) return new ObjectCreation(this.type(ctx.objectCreation().stype()), this.paramList(ctx.objectCreation().paramList()));
-        if (ctx.typeCast() != null) return new TypeCast(this.type(ctx.typeCast().stype()), this.expression(ctx.typeCast().expressionNoOperator()));
-        if (ctx.prefixOperator() != null) return new UnaryOperator(this.unaryOperator(ctx.prefixOperator().operatorLiteralPrefix()), this.expression(ctx.prefixOperator().expressionNoOperator()));
         if (ctx.inlineIncremetVariableFirst() != null) return this.inlineIncrement(ctx.inlineIncremetVariableFirst());
         if (ctx.inlineIncremetVariableLast() != null) return this.inlineIncrement(ctx.inlineIncremetVariableLast());
         if (ctx.variable() != null) return this.variable(ctx.variable());
@@ -340,6 +340,12 @@ public class AstConverter {
     
     private InlineIncrement inlineIncrement(BsParser.InlineIncremetVariableLastContext ctx) {
         return new InlineIncrement(this.variable(ctx.variable()), ctx.INLINE_PLUS() != null, false);
+    }
+    
+    private TypeCast typeCast(BsParser.TypeCastContext ctx) {
+        if (ctx.parenExpression() != null) return new TypeCast(this.type(ctx.stype()), this.expression(ctx.parenExpression().expression()));
+        if (ctx.expressionNoOperator() != null) return new TypeCast(this.type(ctx.stype()), this.expression(ctx.expressionNoOperator()));
+        throw new IncompatibleClassChangeError();
     }
     
     private UnaryOperator.Type unaryOperator(BsParser.OperatorLiteralPrefixContext ctx) {
