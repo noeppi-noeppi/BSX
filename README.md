@@ -13,7 +13,7 @@ BSX is based on [this talk](https://www.youtube.com/watch?v=vcFBwt1nu2U), it sho
 However, there are a few notable differences.
 
   * As BSX compiles to Java bytecode, you can use Java classes in BSX. A java class is denoted in source code by its internal name with all slashes (`/`) replaced with a dot (`.`) and all dollar signs (`$`) replaced with two colons (`::`).
-  * Instance properties must be declared explicitly in order to be accessible with `€this->name`;
+  * Instance properties must be declared explicitly in order to be accessible with `€this->name`.
   * `HALT_AND_CATCH_FIRE` is not a keyword but rather a global method. That means it must be written with a semicolon.
   * `#!` starts a comment, but only at the beginning of the first line. This is to allow shebangs in bs files.
 
