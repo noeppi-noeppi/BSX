@@ -42,6 +42,7 @@ public class ClassCompiler {
         if ((access & Opcodes.ACC_STATIC) != 0) {
             CompilerContext ctx = new CompilerContext(false, null, data);
             InsnList instructions = new InsnList();
+            instructions.add(CommonCode.lineNumber(property.lineNumber()));
             if (property.initialValue() != null) {
                 instructions.add(ExpressionCompiler.compile(ctx, EmptyScope.INSTANCE, property.initialValue()));
             } else {
@@ -52,6 +53,7 @@ public class ClassCompiler {
         } else {
             CompilerContext ctx = new CompilerContext(true, null, data);
             InsnList instructions = new InsnList();
+            instructions.add(CommonCode.lineNumber(property.lineNumber()));
             instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
             if (property.initialValue() != null) {
                 instructions.add(ExpressionCompiler.compile(ctx, EmptyScope.INSTANCE, property.initialValue()));
@@ -81,6 +83,8 @@ public class ClassCompiler {
         
         BlockScope scope = new BlockScope((node.access & Opcodes.ACC_STATIC) == 0, function.args().size());
         
+        node.instructions.add(CommonCode.lineNumber(function.lineNumber()));
+        
         // Wrap args into variables
         int staticOffset = (node.access & Opcodes.ACC_STATIC) == 0 ? 1 : 0;
         for (int i = 0; i < function.args().size(); i++) {
@@ -102,7 +106,7 @@ public class ClassCompiler {
         
         CompilerContext ctx = new CompilerContext((node.access & Opcodes.ACC_STATIC) == 0, returnCode, data);
         
-        node.instructions.add(StatementCompiler.compile(ctx, scope, function.statements()));
+        node.instructions.add(StatementCompiler.compile(ctx, scope, function.lines()));
         
         // If there is no explicit return statement, return no value
         node.instructions.add(new LdcInsnNode(CompilerConstants.valueConstant(NoValue.INSTANCE)));

@@ -23,6 +23,15 @@ import java.util.function.BiFunction;
 
 public class CommonCode {
     
+    public static InsnList lineNumber(int line) {
+        InsnList instructions = new InsnList();
+        LabelNode lineLabel = new LabelNode();
+        lineLabel.getLabel(); // Resolve label
+        instructions.add(lineLabel);
+        instructions.add(new LineNumberNode(line, lineLabel));
+        return instructions;
+    }
+    
     // Expects BsValue on stack, stack is left unchanged
     public static InsnList typeCheck(CompilerContext ctx, @Nullable TypeHint hint) {
         return typeCheck(ctx.data(), hint);

@@ -54,7 +54,7 @@ public class SpecialCallStatementCompiler {
             instructions.add(new LdcInsnNode(i));
             instructions.add(CommonCode.compileIntoBlock(ctx, scope, (c, s) -> {
                 MethodNode node = new MethodNode();
-                node.instructions.add(StatementCompiler.compile(c, s, block.statements()));
+                node.instructions.add(StatementCompiler.compile(c, s, block.lines()));
                 node.instructions.add(new LdcInsnNode(CompilerConstants.valueConstant(NoValue.INSTANCE)));
                 node.instructions.add(new InsnNode(Opcodes.ARETURN));
                 return node;

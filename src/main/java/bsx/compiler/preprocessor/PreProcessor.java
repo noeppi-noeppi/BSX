@@ -5,6 +5,7 @@ public class PreProcessor {
     public static final String START_BLOCK = "\u0002";
     public static final String END_BLOCK = "\u0003";
 
+    // Preprocessor may not change line numbers
     public static String preprocess(String code) {
         String lineFiltered = code.replace("\r", "");
         String withMacros = MacroApplication.applyMacros(lineFiltered);

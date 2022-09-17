@@ -40,7 +40,7 @@ public class AstConverter {
     private Program.Entry programEntry(BsParser.CodeContext ctx) {
         if (ctx.class_() != null) return new Program.ClassEntry(this.bsClass(ctx.class_()));
         if (ctx.function() != null) return new Program.FunctionEntry(this.topLevelFunction(ctx.function()));
-        if (ctx.statement() != null) return new Program.StatementEntry(this.statement(ctx.statement()));
+        if (ctx.statement() != null) return new Program.LineEntry(this.line(ctx.statement()));
         throw new IncompatibleClassChangeError();
     }
 
@@ -89,7 +89,7 @@ public class AstConverter {
         List<MemberModifier> modifiers = this.modifiers(ctx.modifiers(), MemberModifier.FINAL);
         String name = this.variable(ctx.variable()).name();
         Expression expr = ctx.expression() == null ? null : this.expression(ctx.expression());
-        return new Property(modifiers, name, expr);
+        return new Property(ctx.expression().getStart().getLine(), modifiers, name, expr);
     }
     
     private Function topLevelFunction(BsParser.FunctionContext ctx) {
@@ -106,8 +106,8 @@ public class AstConverter {
         String name = this.memberName(ctx.memberName());
         List<Parameter> parameters = ctx.functionParamList().functionParam().stream().map(this::param).toList();
         TypeHint returnTypeHint = ctx.typeHint() == null ? null : this.typeHint(ctx.typeHint());
-        List<Statement> statements = this.statements(ctx.statement());
-        return new Function(modifiers, name, parameters, returnTypeHint, statements);
+        List<Line> lines = this.lines(ctx.statement());
+        return new Function(ctx.getStart().getLine(), modifiers, name, parameters, returnTypeHint, lines);
     }
     
     private Parameter param(BsParser.FunctionParamContext ctx) {
@@ -121,7 +121,7 @@ public class AstConverter {
             char chr = ctx.typeHintSingle().stypeNoArray().getText().toLowerCase(Locale.ROOT).charAt(0);
             boolean hasVowel = chr == 'a' || chr == 'e' || chr == 'i' || chr == 'o' || chr =='u' || chr == 'h';
             boolean needsVowel = ctx.typeHintSingle().IS_PROBABLY_AN() != null;
-            if (hasVowel != needsVowel) throw new IllegalStateException("Check your grammar");
+            if (hasVowel != needsVowel) throw new IllegalStateException("Invalid constant"); // See https://www.youtube.com/watch?v=vcFBwt1nu2U&t=2043s
             return new TypeHint(this.type(ctx.typeHintSingle().stypeNoArray()));
         }
         if (ctx.typeHintArray() != null) return new TypeHint(new ArrayType(this.type(ctx.typeHintArray().ptype())));
@@ -214,8 +214,14 @@ public class AstConverter {
         return new VariableName(text);
     }
 
-    private List<Statement> statements(List<BsParser.StatementContext> list) {
-        return list.stream().map(this::statement).toList();
+    private List<Line> lines(List<BsParser.StatementContext> list) {
+        return list.stream().map(this::line).toList();
+    }
+    
+    private Line line(BsParser.StatementContext ctx) {
+        Statement stmt = statement(ctx);
+        int line = ctx.getStart().getLine();
+        return new Line(line, stmt);
     }
     
     private Statement statement(BsParser.StatementContext ctx) {
@@ -230,7 +236,7 @@ public class AstConverter {
             throw new IncompatibleClassChangeError();
         }
     }
-    
+
     private Statement statement(BsParser.StatementContentContext ctx) {
         if (ctx.echoStatement() != null) return new Echo(this.expression(ctx.echoStatement().expression()));
         if (ctx.gotoStatement() != null) return new Goto(Long.parseLong(ctx.gotoStatement().INTEGER().getText()));
@@ -252,21 +258,21 @@ public class AstConverter {
                 Stream.concat(
                         Stream.of(ctx.doStatement()).map(BsParser.DoStatementContext::statement),
                         ctx.andStatement().stream().map(BsParser.AndStatementContext::statement)
-                ).map(this::statements).map(DoAnd.Block::new).toList()
+                ).map(this::lines).map(DoAnd.Block::new).toList()
         );
     }
     
     private BranchCondition unlessElse(BsParser.UnlessElseStatementContext ctx) {
         // else part appears before unless part in source, so load it first to respect label order
-        List<Statement> ifTrue = this.statements(ctx.statement());
+        List<Line> ifTrue = this.lines(ctx.statement());
         BranchCondition unless = this.unless(ctx.unlessStatement());
-        return new BranchCondition(unless.condition(), ifTrue, unless.ifFalse());
+        return new BranchCondition(unless.conditionLineNumber(), unless.condition(), ifTrue, unless.ifFalse());
     }
     
     private BranchCondition unless(BsParser.UnlessStatementContext ctx) {
-        List<Statement> ifFalse = this.statements(ctx.statement());
+        List<Line> ifFalse = this.lines(ctx.statement());
         Expression condition = this.expression(ctx.expression());
-        return new BranchCondition(condition, List.of(), ifFalse);
+        return new BranchCondition(ctx.expression().getStart().getLine(), condition, List.of(), ifFalse);
     }
     
     private Assignment chainedOperator(BsParser.ChainedOperatorStatementContext ctx) {

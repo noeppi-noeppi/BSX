@@ -4,10 +4,7 @@ import bsx.BsType;
 import bsx.BsValue;
 import bsx.compiler.CompiledProgram;
 import bsx.compiler.CompilerConstants;
-import bsx.compiler.ast.BsClass;
-import bsx.compiler.ast.Member;
-import bsx.compiler.ast.Program;
-import bsx.compiler.ast.Statement;
+import bsx.compiler.ast.*;
 import bsx.compiler.ast.lang.Echo;
 import bsx.compiler.ast.literal.StringLiteral;
 import bsx.compiler.ast.member.Function;
@@ -49,27 +46,27 @@ public class JvmCompiler {
                 .flatMap(Program.Entry::asClass)
                 .map(cls -> compileClass(sourceFileName, cls, internalNameExists))
                 .toList();
-        List<Statement> statements = program.contents().stream()
-                .flatMap(Program.Entry::asStatement)
+        List<Line> lines = program.contents().stream()
+                .flatMap(Program.Entry::asLine)
                 .toList();
         List<Function> functions = program.contents().stream()
                 .flatMap(Program.Entry::asFunction)
                 .toList();
         
-        if (classes.isEmpty() && statements.isEmpty() && functions.isEmpty() && scope == null) {
+        if (classes.isEmpty() && lines.isEmpty() && functions.isEmpty() && scope == null) {
             // See https://twitter.com/lang_bs/status/536838147712507904
-            statements = List.of(new Echo(new StringLiteral(StringType.ASCII, "Hello, world!\n")));
+            lines = List.of(new Line(1, new Echo(new StringLiteral(StringType.ASCII, "Hello, world!\n"))));
         }
         
-        if (statements.isEmpty() && functions.isEmpty() && scope == null) {
+        if (lines.isEmpty() && functions.isEmpty() && scope == null) {
             return new CompiledProgram(null, classes);
         } else {
-            ClassNode main = compileMainCode(sourceFileName, statements, functions, scope, internalNameExists);
+            ClassNode main = compileMainCode(sourceFileName, lines, functions, scope, internalNameExists);
             return new CompiledProgram(main, classes);
         }
     }
 
-    private static ClassNode compileMainCode(@Nullable String sourceFileName, List<Statement> statements, List<Function> functions, @Nullable Scope parentScope, Predicate<String> internalNameExists) {
+    private static ClassNode compileMainCode(@Nullable String sourceFileName, List<Line> lines, List<Function> functions, @Nullable Scope parentScope, Predicate<String> internalNameExists) {
         BlockScope scope;
         MethodType methodType;
         if (parentScope != null) {
@@ -96,7 +93,7 @@ public class JvmCompiler {
         method.name = "main";
         method.desc = Bytecode.getType(methodType).getDescriptor();
         
-        method.instructions.add(StatementCompiler.compile(ctx, scope, statements));
+        method.instructions.add(StatementCompiler.compile(ctx, scope, lines));
         
         method.instructions.add(new LdcInsnNode(CompilerConstants.valueConstant(NoValue.INSTANCE)));
         method.instructions.add(new InsnNode(Opcodes.ARETURN));

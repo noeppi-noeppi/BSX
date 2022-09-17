@@ -189,7 +189,7 @@ public class Resolver {
         List<MethodHandle> variadic = new ArrayList<>();
         for (MethodHandle handle : handles) {
             if (handle.isVarargsCollector()) {
-                if (handle.type().parameterCount() <= args.size()) variadic.add(fixUpTo(handle, args.size()));
+                if (handle.type().parameterCount() - 1 <= args.size()) variadic.add(fixUpTo(handle, args.size()));
             } else {
                 if (handle.type().parameterCount() == args.size()) fixed.add(handle);
             }

@@ -2,9 +2,10 @@ package bsx.compiler.jvm.statement;
 
 import bsx.BsValue;
 import bsx.compiler.ast.Expression;
-import bsx.compiler.ast.Statement;
+import bsx.compiler.ast.Line;
 import bsx.compiler.ast.lang.BranchCondition;
 import bsx.compiler.jvm.expression.ExpressionCompiler;
+import bsx.compiler.jvm.util.CommonCode;
 import bsx.compiler.jvm.util.CompilerContext;
 import bsx.compiler.lvt.BlockScope;
 import bsx.invoke.Values;
@@ -20,18 +21,19 @@ public class ConditionCompiler {
     
     public static InsnList compileCondition(CompilerContext ctx, BlockScope scope, Labels labels, BranchCondition condition) {
         if (condition.ifTrue().isEmpty()) {
-            return compileSimpleCondition(ctx, scope, labels, condition.condition(), condition.ifFalse());
+            return compileSimpleCondition(ctx, scope, labels, condition.conditionLineNumber(), condition.condition(), condition.ifFalse());
         } else {
-            return compileMultiCondition(ctx, scope, labels, condition.condition(), condition.ifTrue(), condition.ifFalse());
+            return compileMultiCondition(ctx, scope, labels, condition.conditionLineNumber(), condition.condition(), condition.ifTrue(), condition.ifFalse());
         }
     }
     
-    private static InsnList compileSimpleCondition(CompilerContext ctx, BlockScope scope, Labels labels, Expression expr, List<Statement> ifFalse) {
+    private static InsnList compileSimpleCondition(CompilerContext ctx, BlockScope scope, Labels labels, int conditionLineNumber, Expression expr, List<Line> ifFalse) {
         LabelNode end = new LabelNode();
         end.getLabel();
         
         InsnList instructions = new InsnList();
         
+        instructions.add(CommonCode.lineNumber(conditionLineNumber));
         instructions.add(ExpressionCompiler.compile(ctx, scope, expr));
         instructions.add(Bytecode.methodCall(Opcodes.INVOKESTATIC, () -> Values.class.getMethod("isTrue", BsValue.class)));
         instructions.add(new JumpInsnNode(Opcodes.IFNE, end));
@@ -41,7 +43,7 @@ public class ConditionCompiler {
         return instructions;
     }
     
-    private static InsnList compileMultiCondition(CompilerContext ctx, BlockScope scope, Labels labels, Expression expr, List<Statement> ifTrue, List<Statement> ifFalse) {
+    private static InsnList compileMultiCondition(CompilerContext ctx, BlockScope scope, Labels labels, int conditionLineNumber, Expression expr, List<Line> ifTrue, List<Line> ifFalse) {
         LabelNode else_ = new LabelNode();
         else_.getLabel();
         
@@ -50,6 +52,7 @@ public class ConditionCompiler {
         
         InsnList instructions = new InsnList();
         
+        instructions.add(CommonCode.lineNumber(conditionLineNumber));
         instructions.add(ExpressionCompiler.compile(ctx, scope, expr));
         instructions.add(Bytecode.methodCall(Opcodes.INVOKESTATIC, () -> Values.class.getMethod("isTrue", BsValue.class)));
         instructions.add(new JumpInsnNode(Opcodes.IFEQ, else_));

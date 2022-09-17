@@ -8,16 +8,16 @@ import java.util.stream.Stream;
 public record Program(List<Entry> contents) {
     
     public sealed interface Entry {
-        default Stream<Statement> asStatement() { return Stream.empty(); }
+        default Stream<Line> asLine() { return Stream.empty(); }
         default Stream<Function> asFunction() { return Stream.empty(); }
         default Stream<BsClass> asClass() { return Stream.empty(); }
     }
     
-    public record StatementEntry(Statement stmt) implements Entry {
+    public record LineEntry(Line line) implements Entry {
 
         @Override
-        public Stream<Statement> asStatement() {
-            return Stream.of(this.stmt());
+        public Stream<Line> asLine() {
+            return Stream.of(this.line());
         }
     }
     

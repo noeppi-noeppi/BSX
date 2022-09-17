@@ -1,11 +1,13 @@
 package bsx.compiler.jvm.statement;
 
 import bsx.compiler.ast.Expression;
+import bsx.compiler.ast.Line;
 import bsx.compiler.ast.Statement;
 import bsx.compiler.ast.lang.*;
 import bsx.compiler.ast.name.Assignment;
 import bsx.compiler.ast.name.UpdateCall;
 import bsx.compiler.jvm.expression.ExpressionCompiler;
+import bsx.compiler.jvm.util.CommonCode;
 import bsx.compiler.jvm.util.CompilerContext;
 import bsx.compiler.lvt.BlockScope;
 import org.objectweb.asm.Opcodes;
@@ -17,26 +19,27 @@ import java.util.List;
 // Assignment, UpdateCall
 public class StatementCompiler {
     
-    public static InsnList compile(CompilerContext ctx, BlockScope scope, List<Statement> statements) {
-        return compile(ctx, scope, statements, new Labels());
+    public static InsnList compile(CompilerContext ctx, BlockScope scope, List<Line> lines) {
+        return compile(ctx, scope, lines, new Labels());
     }
     
-    public static InsnList compile(CompilerContext ctx, BlockScope scope, List<Statement> statements, Labels specialReachLabels) {
+    public static InsnList compile(CompilerContext ctx, BlockScope scope, List<Line> lines, Labels specialReachLabels) {
         Labels labels = new Labels(specialReachLabels);
-        for (Statement stmt : statements) {
-            if (stmt instanceof LabelledStatement ls) {
+        for (Line line : lines) {
+            if (line.statement() instanceof LabelledStatement ls) {
                 labels.addLabel(ls.label());
             }
         }
         labels.freeze();
         
         InsnList instructions = new InsnList();
-        for (Statement stmt : statements) {
-            if (stmt instanceof LabelledStatement ls) {
+        for (Line line : lines) {
+            instructions.add(CommonCode.lineNumber(line.lineNumber()));
+            if (line.statement() instanceof LabelledStatement ls) {
                 instructions.add(labels.getLabel(ls.label()));
                 instructions.add(compileStatement(ctx, scope, labels, ls.stmt()));
             } else {
-                instructions.add(compileStatement(ctx, scope, labels, stmt));
+                instructions.add(compileStatement(ctx, scope, labels, line.statement()));
             }
         }
         return instructions;
