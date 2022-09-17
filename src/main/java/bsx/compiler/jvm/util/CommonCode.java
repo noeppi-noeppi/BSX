@@ -111,8 +111,8 @@ public class CommonCode {
         if (!instance) node.access |= Opcodes.ACC_STATIC;
         if (node.name == null) node.name = "block";
         node.desc = Bytecode.getType(methodType).getDescriptor();
-        
-        childScope.checkDeleted();
+
+        node.instructions.add(scope.end());
         
         Handle handle = ctx.data().addHelperMethod(node);
         return scope.makeBlock(handle);

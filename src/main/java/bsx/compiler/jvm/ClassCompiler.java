@@ -20,6 +20,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
@@ -40,7 +41,7 @@ public class ClassCompiler {
         );
         
         if ((access & Opcodes.ACC_STATIC) != 0) {
-            CompilerContext ctx = new CompilerContext(false, null, data);
+            CompilerContext ctx = new CompilerContext(false, null, lvt -> {}, data);
             InsnList instructions = new InsnList();
             instructions.add(CommonCode.lineNumber(property.lineNumber()));
             if (property.initialValue() != null) {
@@ -51,7 +52,7 @@ public class ClassCompiler {
             instructions.add(new FieldInsnNode(Opcodes.PUTSTATIC, data.className, node.name, node.desc));
             data.addStaticInit(instructions);
         } else {
-            CompilerContext ctx = new CompilerContext(true, null, data);
+            CompilerContext ctx = new CompilerContext(true, null, lvt -> {}, data);
             InsnList instructions = new InsnList();
             instructions.add(CommonCode.lineNumber(property.lineNumber()));
             instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
@@ -84,17 +85,26 @@ public class ClassCompiler {
         BlockScope scope = new BlockScope((node.access & Opcodes.ACC_STATIC) == 0, function.args().size());
         
         node.instructions.add(CommonCode.lineNumber(function.lineNumber()));
+        node.parameters = new ArrayList<>();
+        node.localVariables = new ArrayList<>();
+        
+        LabelNode startLabel = new LabelNode();
+        startLabel.getLabel();
+        
+        node.instructions.add(startLabel);
         
         // Wrap args into variables
         int staticOffset = (node.access & Opcodes.ACC_STATIC) == 0 ? 1 : 0;
         for (int i = 0; i < function.args().size(); i++) {
             Parameter arg = function.args().get(i);
-            int varIdx = scope.newVariable(arg.variable());
+            LocalVariableNode lvt = scope.newVariable(arg.variable(), startLabel);
+            node.parameters.add(new ParameterNode(arg.variable().name(), 0));
+            node.localVariables.add(lvt);
             node.instructions.add(new LdcInsnNode(arg.variable().name()));
             node.instructions.add(new VarInsnNode(Opcodes.ALOAD, staticOffset + i));
             node.instructions.add(CommonCode.typeCheck(data, arg.hint()));
             node.instructions.add(Bytecode.methodCall(Opcodes.INVOKESTATIC, () -> Language.class.getMethod("makeVariable", String.class, BsValue.class)));
-            node.instructions.add(new VarInsnNode(Opcodes.ASTORE, varIdx));
+            node.instructions.add(new VarInsnNode(Opcodes.ASTORE, lvt.index));
         }
 
         Supplier<InsnList> returnCode = () -> {
@@ -104,7 +114,7 @@ public class ClassCompiler {
             return instructions;
         };
         
-        CompilerContext ctx = new CompilerContext((node.access & Opcodes.ACC_STATIC) == 0, returnCode, data);
+        CompilerContext ctx = new CompilerContext((node.access & Opcodes.ACC_STATIC) == 0, returnCode, node.localVariables::add, data);
         
         node.instructions.add(StatementCompiler.compile(ctx, scope, function.lines()));
         
@@ -112,7 +122,7 @@ public class ClassCompiler {
         node.instructions.add(new LdcInsnNode(CompilerConstants.valueConstant(NoValue.INSTANCE)));
         node.instructions.add(returnCode.get());
         
-        scope.checkDeleted();
+        node.instructions.add(scope.end());
         
         return node;
     }

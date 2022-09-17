@@ -10,10 +10,7 @@ import bsx.compiler.lvt.BlockScope;
 import bsx.util.Bytecode;
 import bsx.variable.Variable;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
+import org.objectweb.asm.tree.*;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -30,7 +27,12 @@ public class AssignmentCompiler {
             if (scope.hasVariable(var)) {
                 lvt = scope.getVariable(var);
             } else {
-                lvt = scope.newVariable(var);
+                LabelNode label = new LabelNode();
+                label.getLabel();
+                instructions.add(label);
+                LocalVariableNode varNode = scope.newVariable(var, label);
+                ctx.locals().accept(varNode);
+                lvt = varNode.index;
                 instructions.add(CommonCode.createVariableAt(var.name(), lvt));
             }
             

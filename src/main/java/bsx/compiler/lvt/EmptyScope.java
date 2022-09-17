@@ -3,9 +3,7 @@ package bsx.compiler.lvt;
 import bsx.compiler.ast.name.VariableName;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.TypeInsnNode;
+import org.objectweb.asm.tree.*;
 
 public final class EmptyScope extends BlockScope {
 
@@ -16,7 +14,7 @@ public final class EmptyScope extends BlockScope {
     }
 
     @Override
-    public int newVariable(VariableName var) {
+    public LocalVariableNode newVariable(VariableName var, LabelNode currentLabel) {
         throw new IllegalArgumentException("Can't create variables here");
     }
 

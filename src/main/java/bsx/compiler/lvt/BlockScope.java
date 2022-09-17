@@ -23,6 +23,7 @@ public sealed class BlockScope permits EmptyScope {
     private final List<String> ownVariables;
     private final Set<String> variableNames;
     private final Set<String> deletedVariables;
+    private final LabelNode endLabel;
     
     public BlockScope(boolean instance, int argOffset) {
         this.offset = (instance ? 1 : 0) + argOffset;
@@ -30,6 +31,8 @@ public sealed class BlockScope permits EmptyScope {
         this.ownVariables = new ArrayList<>();
         this.variableNames = new HashSet<>();
         this.deletedVariables = new HashSet<>();
+        this.endLabel = new LabelNode();
+        this.endLabel.getLabel();
     }
     
     public BlockScope(boolean instance, int argOffset, BlockScope parent) {
@@ -38,6 +41,8 @@ public sealed class BlockScope permits EmptyScope {
         this.ownVariables = new ArrayList<>();
         this.variableNames = new HashSet<>(parent.variableNames);
         this.deletedVariables = new HashSet<>(parent.deletedVariables);
+        this.endLabel = new LabelNode();
+        this.endLabel.getLabel();
     }
     
     private BlockScope(BlockScope parent) {
@@ -46,6 +51,8 @@ public sealed class BlockScope permits EmptyScope {
         this.ownVariables = new ArrayList<>();
         this.variableNames = new HashSet<>(parent.variableNames);
         this.deletedVariables = new HashSet<>(parent.deletedVariables);
+        this.endLabel = new LabelNode();
+        this.endLabel.getLabel();
     }
     
     public BlockScope(Scope parent) {
@@ -54,6 +61,8 @@ public sealed class BlockScope permits EmptyScope {
         this.ownVariables = new ArrayList<>(parent.availableVariables());
         this.variableNames = new HashSet<>(this.ownVariables);
         this.deletedVariables = new HashSet<>(parent.deletedVariables());
+        this.endLabel = new LabelNode();
+        this.endLabel.getLabel();
     }
     
     public static BlockScope makeSameMethodInnerScope(BlockScope parent) {
@@ -72,13 +81,14 @@ public sealed class BlockScope permits EmptyScope {
         return Set.copyOf(this.deletedVariables);
     }
     
-    public int newVariable(VariableName var) {
+    public LocalVariableNode newVariable(VariableName var, LabelNode currentLabel) {
         if (this.variableNames.contains(var.name())) {
             throw new IllegalStateException("Variable €" + var.name() + " already defined in the scope.");
         } else {
             this.variableNames.add(var.name());
             this.ownVariables.add(var.name());
-            return this.offset + this.parentVariables.size() + this.ownVariables.indexOf(var.name());
+            int varIdx = this.offset + this.parentVariables.size() + this.ownVariables.indexOf(var.name());
+            return new LocalVariableNode(var.name(), Type.getType(Variable.class).getDescriptor(), null, currentLabel, this.endLabel, varIdx);
         }
     }
     
@@ -106,7 +116,7 @@ public sealed class BlockScope permits EmptyScope {
         }
     }
     
-    public void checkDeleted() {
+    public InsnList end() {
         List<String> undeleted = this.ownVariables.stream()
                 .filter(name -> !this.deletedVariables.contains(name))
                 .map(name -> "€" + name)
@@ -114,6 +124,9 @@ public sealed class BlockScope permits EmptyScope {
         if (!undeleted.isEmpty()) {
             throw new IllegalStateException("Variables must be deleted: " + String.join(", ", undeleted));
         }
+        InsnList instructions = new InsnList();
+        instructions.add(this.endLabel);
+        return instructions;
     }
     
     public MethodType innerBlockType() {

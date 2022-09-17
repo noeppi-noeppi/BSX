@@ -21,13 +21,11 @@ import bsx.util.Bytecode;
 import bsx.value.NoValue;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 
 import javax.annotation.Nullable;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -85,22 +83,29 @@ public class JvmCompiler {
         node.superName = Type.getType(Object.class).getInternalName();
         if (sourceFileName != null) node.sourceFile = sourceFileName;
         
-        ClassData data = new ClassData(node.name, false, internalNameExists);
-        CompilerContext ctx = new CompilerContext(false, null, data);
-        
         MethodNode method = new MethodNode();
         method.access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL;
         method.name = "main";
         method.desc = Bytecode.getType(methodType).getDescriptor();
         
+        if (methodType.parameterCount() == scope.allVariables().size()) {
+            method.parameters = new ArrayList<>();
+            for (String var : scope.allVariables()) method.parameters.add(new ParameterNode(var, 0));
+        }
+        
+        method.localVariables = new ArrayList<>();
+
+        ClassData data = new ClassData(node.name, false, internalNameExists);
+        CompilerContext ctx = new CompilerContext(false, null, method.localVariables::add, data);
+        
         method.instructions.add(StatementCompiler.compile(ctx, scope, lines));
         
         method.instructions.add(new LdcInsnNode(CompilerConstants.valueConstant(NoValue.INSTANCE)));
         method.instructions.add(new InsnNode(Opcodes.ARETURN));
+
+        method.instructions.add(scope.end());
         
         node.methods.add(method);
-
-        scope.checkDeleted();
         
         for (Function function : functions) {
             if ("main".equals(function.name())) {
