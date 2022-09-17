@@ -11,12 +11,14 @@ public class IntegerValue implements BsValue {
     public final int value;
 
     public IntegerValue(int value) {
-        if ((value & 0x80000000) == 0) {
-            // Positive number, fill with zeros
-            this.value = value & 0x8000FFFF;
+        // Check the 17th bit for the sign to support int overflow
+        // Negative numbers that are in bound will have it set anyway
+        if ((value & 0x00010000) == 0) {
+            // Positive number, fill with zeros and clear sign bit
+            this.value = value & 0x0000FFFF;
         } else {
-            // Negative number, fill with ones
-            this.value = value | 0x7FFF0000;
+            // Negative number, fill with ones and set sign bit
+            this.value = value | 0xFFFF0000;
         }
     }
 
