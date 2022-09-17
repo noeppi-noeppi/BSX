@@ -9,7 +9,7 @@ import bsx.value.StringValue;
 import java.time.format.DateTimeFormatter;
 
 @Singleton
-public class BS {
+public final class BS {
     
     public static final BsValue EOL = new StringValue(StringType.ASCII, System.lineSeparator());
     

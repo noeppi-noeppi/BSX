@@ -15,15 +15,15 @@ public interface BsValue {
     
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     default boolean matchesJava(Class<?> cls) {
-        return cls == BsValue.class;
+        return cls == BsValue.class || (BsValue.class.isAssignableFrom(cls) && cls.isAssignableFrom(this.getClass()));
     }
     
     default <T> T asJava(Class<T> cls) {
-        if (cls == BsValue.class) {
+        if (cls == BsValue.class || (BsValue.class.isAssignableFrom(cls) && cls.isAssignableFrom(this.getClass()))) {
             //noinspection unchecked
             return (T) this;
         }
-        throw new ClassCastException("Expected a value of type " + cls + ", got " + this);
+        throw new ClassCastException("Expected a value of type " + cls + ", got " + this + " (" + this.getType() + ")");
     }
     
     default boolean isOf(BsType type) {

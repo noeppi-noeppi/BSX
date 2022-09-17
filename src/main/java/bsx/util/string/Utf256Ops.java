@@ -5,6 +5,10 @@ import bsx.resolution.SpecialInvoke;
 import bsx.type.StringType;
 import bsx.value.StringValue;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 // UTF-256 strings that can be represented as java strings will also use StringOps
 public class Utf256Ops {
 
@@ -38,6 +42,25 @@ public class Utf256Ops {
         int[] data = new int[8 * len];
         System.arraycopy(utf256, 8 * off, data, 0, 8 * len);
         return new StringValue(StringType.UTF256, data);
+    }
+
+    @InvokeAsInstanceMethod
+    public static List<StringValue> explode(int[] utf256, StringValue sepValue) {
+        int[] sep = sepValue.getRaw().toArray();
+        if (sep.length == 0) throw new IllegalArgumentException("Empty separator");
+        List<int[]> parts = new ArrayList<>();
+        int start = 0;
+        outer: for (int i = 0; i <= utf256.length - sep.length; i += 8) {
+            for (int j = 0; j < sep.length; j++) {
+                if (utf256[i + j] != sep[j]) continue outer;
+            }
+            parts.add(Arrays.copyOfRange(utf256, start, i));
+            start = i + sep.length;
+        }
+        if (start < utf256.length) {
+            parts.add(Arrays.copyOfRange(utf256, start, utf256.length));
+        }
+        return parts.stream().map(part -> new StringValue(StringType.UTF256, part)).toList();
     }
 
     @SpecialInvoke

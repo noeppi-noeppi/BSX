@@ -127,6 +127,8 @@ public class ArrayValue implements BsValue {
     @Override
     public String toString() {
         if (this.values.isEmpty()) return "[]";
-        return "[ " + this.values.stream().map(BsValue::toString).collect(Collectors.joining(", ")) + " ]";
+        return "[ " + this.values.stream()
+                .map(v -> v instanceof StringValue sv ? sv.getType().wrap(sv.toString()) : v.toString())
+                .collect(Collectors.joining(", ")) + " ]";
     }
 }

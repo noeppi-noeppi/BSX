@@ -14,7 +14,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Predef {
+public final class Predef {
     
     @SpecialInvoke
     public static void HALT_AND_CATCH_FIRE() {
@@ -23,22 +23,7 @@ public class Predef {
     
     @NoLookup
     public static void echo(BsValue value) {
-        if (value instanceof StringValue sv && sv.getPrintableString().isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            int[] utf256 = sv.getRaw().toArray();
-            for (int i = 0; i + 7 < utf256.length; i += 8) {
-                if (utf256[i] != 0 || utf256[i + 1] != 0 || utf256[i + 2] != 0 || utf256[i + 3] != 0
-                        || utf256[i + 4] != 0 || utf256[i + 5] != 0 || utf256[i + 6] != 0
-                        || (!Character.isBmpCodePoint(utf256[i + 7]) && !Character.isValidCodePoint(utf256[i + 7]))) {
-                    sb.append(BSX.REPLACEMENT_CHAR);
-                } else {
-                    sb.appendCodePoint(utf256[i + 7]);
-                }
-            }
-            System.out.print(sb);
-        } else {
-            System.out.print(value);
-        }
+        System.out.print(BSX.getPrintableString(value));
         System.out.flush();
     }
     

@@ -14,26 +14,35 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 public enum StringType implements BsType {
     
-    ASCII("ASCII", StandardCharsets.US_ASCII),
-    ANSI("ANSI", StandardCharsets.ISO_8859_1),
-    DBCS("DBCS", StandardCharsets.UTF_16LE),
-    EBCDIC("EBCDIC", Charset.forName("IBM037")),
-    UTF256("String", null);
+    ASCII("ASCII", "'", "'", StandardCharsets.US_ASCII),
+    ANSI("ANSI", "''", "''", StandardCharsets.ISO_8859_1),
+    DBCS("DBCS", "\"", "\"", StandardCharsets.UTF_16LE),
+    EBCDIC("EBCDIC", "\"\"", "\"\"", Charset.forName("IBM037")),
+    UTF256("String", "«", "»", null);
     
     public final String name;
+    private final String literalStart;
+    private final String literalEnd;
     
     @Nullable
     public final Charset charset;
 
-    StringType(String name, @Nullable Charset charset) {
+    StringType(String name, String literalStart, String literalEnd, @Nullable Charset charset) {
         this.name = name;
+        this.literalStart = literalStart;
+        this.literalEnd = literalEnd;
         this.charset = charset;
     }
 
+    public String wrap(String string) {
+        return this.literalStart + string + this.literalEnd;
+    }
+    
     @Override
     public BsValue cast(BsValue value) {
         if (value.getType() == NoValue.INSTANCE) {
@@ -56,9 +65,16 @@ public enum StringType implements BsType {
         }
         if (instance) {
             if (args.isEmpty() || !(args.get(0) instanceof StringValue sv)) return null;
+            
+            boolean hasAnyNonPrintableStringArgs = args.stream().skip(1)
+                    .filter(v -> v instanceof StringValue)
+                    .map(v -> (StringValue) v)
+                    .anyMatch(v -> v.getPrintableString().isEmpty());
+
             // For strings that can be represented with regular java strings, resolve in StringOps
             // otherwise use Utf256Ops
-            if (sv.getPrintableString().isPresent()) {
+            // assume that args need to be printable as well. If not, also fall back to Utf256Ops
+            if (sv.getPrintableString().isPresent() && !hasAnyNonPrintableStringArgs) {
                 MethodHandle result = Resolver.resolve(String.class, StringOps.class, name, args, true, special);
                 if (result == null) return null;
                 MethodHandle selfHandle = MethodHandles.filterArguments(result, 0, StringValue.findStringGetter());
@@ -87,8 +103,16 @@ public enum StringType implements BsType {
             MethodHandle newStringValue = MethodHandles.lookup().findConstructor(StringValue.class, MethodType.methodType(void.class, StringType.class, String.class));
             MethodHandle newStringValueWithCurrentType = MethodHandles.insertArguments(newStringValue, 0, this);
             return MethodHandles.filterReturnValue(handle, newStringValueWithCurrentType);
+        } else if (handle.type().returnType() == String[].class) {
+            MethodHandle newStringArray = MethodHandles.lookup().findStatic(StringType.class, "fixStringArray", MethodType.methodType(StringValue[].class, StringType.class, String[].class));
+            MethodHandle newStringArrayWithCurrentType = MethodHandles.insertArguments(newStringArray, 0, this);
+            return MethodHandles.filterReturnValue(handle, newStringArrayWithCurrentType);
         } else {
             return handle;
         }
+    }
+    
+    private static StringValue[] fixStringArray(StringType type, String[] values) {
+        return Arrays.stream(values).map(str -> new StringValue(type, str)).toArray(StringValue[]::new);
     }
 }

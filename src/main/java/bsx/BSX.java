@@ -7,8 +7,10 @@ import bsx.compiler.lvt.Scope;
 import bsx.invoke.Calls;
 import bsx.util.MethodUtil;
 import bsx.util.StackTraceCleaner;
+import bsx.value.ArrayValue;
 import bsx.value.NoValue;
 import bsx.value.NullValue;
+import bsx.value.StringValue;
 import sun.misc.Unsafe;
 
 import java.lang.invoke.MethodHandle;
@@ -19,6 +21,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class BSX {
@@ -135,6 +138,29 @@ public class BSX {
             handle.invokeWithArguments(snapshot.variables());
         } catch (Throwable e) {
             UNSAFE.throwException(e);
+        }
+    }
+    
+    public static String getPrintableString(BsValue value) {
+        if (value instanceof StringValue sv && sv.getPrintableString().isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            int[] utf256 = sv.getRaw().toArray();
+            for (int i = 0; i + 7 < utf256.length; i += 8) {
+                if (utf256[i] != 0 || utf256[i + 1] != 0 || utf256[i + 2] != 0 || utf256[i + 3] != 0
+                        || utf256[i + 4] != 0 || utf256[i + 5] != 0 || utf256[i + 6] != 0
+                        || (!Character.isBmpCodePoint(utf256[i + 7]) && !Character.isValidCodePoint(utf256[i + 7]))) {
+                    sb.append(REPLACEMENT_CHAR);
+                } else {
+                    sb.appendCodePoint(utf256[i + 7]);
+                }
+            }
+            return sb.toString();
+        } else if (value instanceof ArrayValue av) {
+            return "[ " + av.values().stream()
+                    .map(v -> v instanceof StringValue sv ? sv.getType().wrap(BSX.getPrintableString(v)) : BSX.getPrintableString(v))
+                    .collect(Collectors.joining(", ")) + " ]";
+        } else {
+            return value.toString();
         }
     }
     

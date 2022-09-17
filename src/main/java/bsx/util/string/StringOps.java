@@ -5,6 +5,8 @@ import bsx.resolution.InvokeAsInstanceMethod;
 import bsx.resolution.SpecialInvoke;
 import bsx.util.ValueHelper;
 
+import java.util.regex.Pattern;
+
 // Methods for the string type. For non-printable UTF-256 stings use Utf256Ops
 // All methods from one class must be in the other as well
 public class StringOps {
@@ -27,6 +29,12 @@ public class StringOps {
         if (off < 0 || off > length) throw new StringIndexOutOfBoundsException(off);
         if (len < 0 || off + len > length) throw new StringIndexOutOfBoundsException(len);
         return ValueHelper.fromCodePoints(string.codePoints().skip(off).limit(len));
+    }
+    
+    @InvokeAsInstanceMethod
+    public static String[] explode(String string, String sep) {
+        if (sep.isEmpty()) throw new IllegalArgumentException("Empty separator");
+        return string.split(Pattern.quote(sep), -1);
     }
     
     @SpecialInvoke
