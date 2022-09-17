@@ -1,0 +1,52 @@
+
+plugins {
+    id 'application'
+    id 'java-library'
+    id 'antlr'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    antlr "org.antlr:antlr4:4.11.1"
+    
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation 'net.sf.jopt-simple:jopt-simple:5.0.4'
+    implementation 'org.apache.commons:commons-text:1.9'
+    implementation 'org.ow2.asm:asm:9.3'
+    implementation 'org.ow2.asm:asm-tree:9.3'
+    implementation 'org.ow2.asm:asm-commons:9.3'
+    implementation 'org.antlr:antlr4-runtime:4.11.1'
+}
+
+application {
+    mainClass = 'bsx.Main'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': application.mainClassName
+    }
+}
+
+task fatjar(type: Jar) {
+    classifier 'fatjar'
+    manifest = jar.manifest
+    with jar
+}
+build.dependsOn fatjar
+
+task configureFatJar {
+    doLast {
+        configurations.runtimeClasspath.each { dep ->
+            fatjar.from(project.zipTree(dep)) {
+                exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'module-info.class'
+                duplicatesStrategy DuplicatesStrategy.INCLUDE
+            }
+        }
+    }
+    outputs.upToDateWhen { false }
+}
+fatjar.dependsOn configureFatJar
