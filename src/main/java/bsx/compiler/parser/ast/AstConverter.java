@@ -16,6 +16,7 @@ import bsx.compiler.ast.types.TypeHint;
 import bsx.compiler.parser.antlr.BsParser;
 import bsx.type.*;
 import bsx.util.string.StringEscapeHelper;
+import bsx.value.NoValue;
 import bsx.value.NullValue;
 import org.antlr.v4.runtime.RuleContext;
 
@@ -148,6 +149,7 @@ public class AstConverter {
     
     private BsType namedTypeSingular(String name) {
         return switch (name) {
+            case "void" -> NoValue.INSTANCE;
             case "null" -> NullValue.NULL;
             case "Nothing" -> NullValue.NOTHING;
             case "undefined" -> NullValue.UNDEFINED;
@@ -168,6 +170,7 @@ public class AstConverter {
 
     private BsType namedTypePlural(String name) {
         return switch (name) {
+            case "voids" -> NoValue.INSTANCE;
             case "nulls" -> NullValue.NULL;
             case "Nothings" -> NullValue.NOTHING;
             case "undefined" -> NullValue.UNDEFINED;
@@ -219,7 +222,7 @@ public class AstConverter {
     }
     
     private Line line(BsParser.StatementContext ctx) {
-        Statement stmt = statement(ctx);
+        Statement stmt = this.statement(ctx);
         int line = ctx.getStart().getLine();
         return new Line(line, stmt);
     }
@@ -242,7 +245,8 @@ public class AstConverter {
         if (ctx.gotoStatement() != null) return new Goto(Long.parseLong(ctx.gotoStatement().INTEGER().getText()));
         if (ctx.passStatement() != null) return NoOp.INSTANCE;
         if (ctx.deleteStatement() != null) return new Deletion(ctx.deleteStatement().variable().stream().map(this::variable).toList());
-        if (ctx.returnStatement() != null) return new Return(this.expression(ctx.returnStatement().expression()));
+        if (ctx.returnStatementValued() != null) return new Return(this.expression(ctx.returnStatementValued().expression()));
+        if (ctx.returnStatement() != null) return new Return(null);
         if (ctx.doAndStatement() != null) return this.doAnd(ctx.doAndStatement());
         if (ctx.unlessElseStatement() != null) return this.unlessElse(ctx.unlessElseStatement());
         if (ctx.unlessStatement() != null) return this.unless(ctx.unlessStatement());
@@ -302,35 +306,29 @@ public class AstConverter {
     }
     
     private Expression expression(BsParser.ExpressionNoOperatorContext ctx) {
-        if (ctx.applyCall() != null) return this.applyCall(ctx.applyCall());
-        if (ctx.typeCast() != null) return typeCast(ctx.typeCast());
+        if (ctx.instancePropertyOrApplyCall() != null) return this.instancePropertyOrApplyCall(ctx.instancePropertyOrApplyCall());
+        if (ctx.typeCast() != null) return this.typeCast(ctx.typeCast());
         if (ctx.prefixOperator() != null) return new UnaryOperator(this.unaryOperator(ctx.prefixOperator().operatorLiteralPrefix()), this.expression(ctx.prefixOperator().expressionNoOperator()));
-        if (ctx.expressionNoApply() != null) return this.expression(ctx.expressionNoApply());
-        throw new IncompatibleClassChangeError();
-    }
-    
-    private ApplyCall applyCall(BsParser.ApplyCallContext ctx) {
-        if (ctx.applyCall() != null) return new ApplyCall(this.applyCall(ctx.applyCall()), this.paramList(ctx.paramList()));
-        if (ctx.expressionNoApply() != null) return new ApplyCall(this.expression(ctx.expressionNoApply()), this.paramList(ctx.paramList()));
-        throw new IncompatibleClassChangeError();
-    }
-    
-    private Expression expression(BsParser.ExpressionNoApplyContext ctx) {
-        if (ctx.instanceProperty() != null) return this.instanceProperty(ctx.instanceProperty());
-        if (ctx.staticProperty() != null) return new StaticProperty(this.type(ctx.staticProperty().stype()), ctx.staticProperty().IDENT().getText());
-        if (ctx.parentProperty() != null) return new ParentProperty(ctx.parentProperty().IDENT().getText());
         if (ctx.expressionNoProperty() != null) return this.expression(ctx.expressionNoProperty());
         throw new IncompatibleClassChangeError();
     }
     
-    private InstanceProperty instanceProperty(BsParser.InstancePropertyContext ctx) {
-        if (ctx.instanceProperty() != null) return new InstanceProperty(this.instanceProperty(ctx.instanceProperty()), ctx.IDENT().getText());
-        if (ctx.expressionNoProperty() != null) return new InstanceProperty(this.expression(ctx.expressionNoProperty()), ctx.IDENT().getText());
+    private Expression instancePropertyOrApplyCall(BsParser.InstancePropertyOrApplyCallContext ctx) {
+        Expression base = null;
+        if (ctx.instancePropertyOrApplyCall() != null) base = this.instancePropertyOrApplyCall(ctx.instancePropertyOrApplyCall());
+        if (ctx.expressionNoProperty() != null) base = this.expression(ctx.expressionNoProperty());
+        if (base == null) throw new IncompatibleClassChangeError();
+        
+        BsParser.InstancePropertyOrApplyCallPartContext part = ctx.instancePropertyOrApplyCallPart();
+        if (part.paramList() != null) return new ApplyCall(base, this.paramList(part.paramList()));
+        if (part.IDENT() != null) return new InstanceProperty(base, part.IDENT().getSymbol().getText());
         throw new IncompatibleClassChangeError();
     }
     
     private Expression expression(BsParser.ExpressionNoPropertyContext ctx) {
         if (ctx.parenExpression() != null) return this.expression(ctx.parenExpression().expression());
+        if (ctx.staticProperty() != null) return new StaticProperty(this.type(ctx.staticProperty().stype()), ctx.staticProperty().IDENT().getText());
+        if (ctx.parentProperty() != null) return new ParentProperty(ctx.parentProperty().IDENT().getText());
         if (ctx.literal() != null) return this.literal(ctx.literal());
         if (ctx.objectCreation() != null) return new ObjectCreation(this.type(ctx.objectCreation().stype()), this.paramList(ctx.objectCreation().paramList()));
         if (ctx.inlineIncremetVariableFirst() != null) return this.inlineIncrement(ctx.inlineIncremetVariableFirst());

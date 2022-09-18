@@ -6,6 +6,7 @@ import bsx.runtime.date.DateFormatHelper;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
 import java.util.Objects;
 
 @SuppressWarnings("ClassCanBeRecord")
@@ -67,16 +68,16 @@ public final class Date {
     }
     
     @SpecialInvoke
-    public String offset() {
-        return this.time.getOffset().getId();
+    public double offset() {
+        return this.time.getOffset().getLong(ChronoField.OFFSET_SECONDS) / 3600d;
     }
     
     public Date atZone(String zone) {
-        return new Date(this.time.withZoneSameInstant(ZoneId.of(zone)));
+        return new Date(this.time.withZoneSameLocal(ZoneId.of(zone)));
     }
     
     public Date withZone(String zone) {
-        return new Date(this.time.withZoneSameLocal(ZoneId.of(zone)));
+        return new Date(this.time.withZoneSameInstant(ZoneId.of(zone)));
     }
 
     @Override

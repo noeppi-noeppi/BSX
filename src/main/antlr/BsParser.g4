@@ -27,15 +27,17 @@ modifierReadonly: READONLY;
 statement: labelledStatement | statementContent;
 labelledStatement: INTEGER statementContent;
 
-statementContent: echoStatement | gotoStatement | passStatement | deleteStatement | returnStatement | doAndStatement
-  | unlessElseStatement | unlessStatement | assignStatement | updateStatement | chainedOperatorStatement | expressionStatement;
+statementContent: echoStatement | gotoStatement | passStatement | deleteStatement | returnStatementValued | returnStatement
+  | doAndStatement | unlessElseStatement | unlessStatement | assignStatement | updateStatement | chainedOperatorStatement
+  | expressionStatement;
 
 expressionStatement: expression SEMICOLON;
 echoStatement: ECHO expression SEMICOLON;
 gotoStatement: GOTO INTEGER SEMICOLON;
 passStatement: PASS SEMICOLON;
 deleteStatement: DELETE variable (COMMA variable)* SEMICOLON;
-returnStatement: RETURN expression SEMICOLON;
+returnStatementValued: RETURN expression SEMICOLON;
+returnStatement: RETURN SEMICOLON;
 chainedOperatorStatement: variable CHAINED_OPERATOR expression SEMICOLON;
 
 doAndStatement: doStatement andStatement*;
@@ -55,10 +57,9 @@ operatorLiteralPrefix: BANG_OPERATOR | MINUS_OPERATOR;
 expression: expressionNoOperator (operatorLiteralInfix expressionNoOperator)*;
 expressionNoComma: expressionNoOperator (operatorLiteralInfixNoComma expressionNoOperator)*;
 parenExpression: START_GROUP expression END_GROUP;
-expressionNoOperator: typeCast | prefixOperator | applyCall | expressionNoApply;
-expressionNoApply: instanceProperty | staticProperty | parentProperty | expressionNoProperty;
-expressionNoProperty: parenExpression | literal | objectCreation | inlineIncremetVariableFirst
-  | inlineIncremetVariableLast | variable | name;
+expressionNoOperator: typeCast | prefixOperator | instancePropertyOrApplyCall | expressionNoProperty;
+expressionNoProperty: parenExpression | staticProperty | parentProperty | literal | objectCreation
+  | inlineIncremetVariableFirst | inlineIncremetVariableLast | variable | name;
 
 paramList: START_GROUP (expressionNoComma (COMMA expressionNoComma)*)? END_GROUP;
 
@@ -88,8 +89,8 @@ interpolatedPart: interpolatedText | interpolatedExpression;
 interpolatedText: INTERPOLATED_STRING_TEXT;
 interpolatedExpression: INTERPOLATED_STRING_EXPR expression END_INLINE;
 
-applyCall: applyCall paramList | expressionNoApply paramList;
-instanceProperty: instanceProperty INSTANCE_ACCESS IDENT | expressionNoProperty INSTANCE_ACCESS IDENT;
+instancePropertyOrApplyCall: instancePropertyOrApplyCall instancePropertyOrApplyCallPart | expressionNoProperty instancePropertyOrApplyCallPart;
+instancePropertyOrApplyCallPart: INSTANCE_ACCESS IDENT | paramList;
 staticProperty: stype STATIC_ACCESS IDENT;
 parentProperty: PARENT STATIC_ACCESS IDENT;
 

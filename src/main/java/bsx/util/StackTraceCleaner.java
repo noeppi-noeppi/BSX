@@ -17,6 +17,7 @@ public class StackTraceCleaner {
     
     @SuppressWarnings("RedundantIfStatement")
     private static boolean shouldKeep(StackTraceElement trace) {
+        if (trace.getClassName().equals("bsx.BSX") && trace.getMethodName().startsWith("invoke")) return false;
         if (trace.getClassName().startsWith("bsx.invoke.")) return false;
         if (trace.getClassName().equals("java.lang.invoke.MethodHandle") && trace.getMethodName().equals("invokeWithArguments")) return false;
         return true;

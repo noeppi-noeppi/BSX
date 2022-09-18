@@ -84,6 +84,12 @@ public class Main {
             if (fileName.endsWith(".bs")) fileName += "x";
             Path target = dumpPath.resolve(fileName);
             Files.writeString(target, preprocessed, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            
+            fileName = fileName.endsWith(".bsx") ? fileName.substring(0, fileName.length() - 4) : fileName;
+            fileName += ".tk";
+            Path tokenTarget = dumpPath.resolve(fileName);
+            String tokenized = api.tokenize(preprocessed);
+            Files.writeString(tokenTarget, tokenized, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         }
         Program ast = api.parseAST(preprocessed);
         return api.compile(path.toAbsolutePath().normalize().getFileName().toString(), ast, null);

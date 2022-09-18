@@ -7,6 +7,7 @@ import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -38,11 +39,27 @@ public class DateFormatHelper {
             1L, "PM"
     );
     
+    private static final Map<Long, String> DAYS_WITH_SUFFIX;
+
+    static {
+        Map<Long, String> map = new HashMap<>();
+        for (int i = 1; i <= 31; i++) map.put((long) i, String.format("%02d", i) + switch (i % 10) {
+            case 1 -> "st";
+            case 2 -> "nd";
+            case 3 -> "rd";
+            default -> "th";
+        });
+        // 11 and 12 are the exceptions
+        map.put(11L, "11th");
+        map.put(12L, "12th");
+        DAYS_WITH_SUFFIX = Map.copyOf(map);
+    }
+
     public static DateTimeFormatter getFormatter(String formattedSample) {
         DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
         String current = formattedSample;
         while (!current.isEmpty()) current = addNext(formattedSample, current, builder);
-        return builder.toFormatter(Locale.ROOT);
+        return builder.toFormatter(Locale.ENGLISH); // Must use english, for full text month and weekday to work
     }
     
     private static String addNext(String fullString, String str, DateTimeFormatterBuilder builder) {
@@ -64,6 +81,9 @@ public class DateFormatHelper {
         } else if (str.startsWith("Nov")) {
             builder.appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT);
             return str.substring(3);
+        } else if (str.startsWith("21st")) {
+            builder.appendText(ChronoField.DAY_OF_MONTH, DAYS_WITH_SUFFIX);
+            return str.substring(4);
         } else if (str.startsWith("21")) {
             builder.appendValue(ChronoField.DAY_OF_MONTH, 2);
             return str.substring(2);
@@ -107,7 +127,7 @@ public class DateFormatHelper {
             builder.appendLiteral("" + str.charAt(0));
             return str.substring(1);
         } else {
-            throw new IllegalArgumentException("Invalid time zone pattern: " + fullString);
+            throw new IllegalArgumentException("Invalid date pattern: " + fullString);
         }
     }
     

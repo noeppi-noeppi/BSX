@@ -13,7 +13,7 @@ public class Types {
     
     public static BsValue checkType(BsValue value, BsType type) {
         if (!value.isOf(type)) {
-            throw new ClassCastException("Expected value of type " + type);
+            throw new ClassCastException("Expected value of type " + type + ", got " + value.getType());
         }
         return value;
     }

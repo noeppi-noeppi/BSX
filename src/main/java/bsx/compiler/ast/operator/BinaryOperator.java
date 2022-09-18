@@ -35,11 +35,11 @@ public record BinaryOperator(Type type, Expression arg1, Expression arg2) implem
     public enum Priority {
         MULTIPLICATIVE,
         ADDITIVE,
-        CONCAT,
         RELATIONAL,
         EQUALITY,
         LOGICAL_AND,
-        LOGICAL_OR;
+        LOGICAL_OR,
+        CONCAT;
         
         public final boolean isRightAssociative = false;
         
