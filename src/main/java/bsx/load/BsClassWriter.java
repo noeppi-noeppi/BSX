@@ -27,7 +27,7 @@ public class BsClassWriter extends ClassWriter {
         String current = type;
         do {
             list.add(current);
-            current = Bootstrap.context().getSuperClass(current);
+            current = Bootstrap.context().getInheritance(current).superClass();
         } while (!"java/lang/Object".equals(current));
         return list;
     }

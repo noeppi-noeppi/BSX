@@ -20,15 +20,13 @@ import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class LoadingContext {
     
     private final Object LOCK = new Object();
     private final BsClassLoader loader;
-    private final Map<String, String> classInheritance;
+    private final Map<String, TypeHierarchy> classInheritance;
     private final Map<String, byte[]> classData;
     private int nextRuntimeId;
     private Path dumpTarget = null;
@@ -95,7 +93,7 @@ public class LoadingContext {
             if (this.classInheritance.containsKey(cls.name)) {
                 throw new IllegalStateException("Named class registered twice: " + cls.name);
             }
-            this.classInheritance.put(cls.name, superNameFor(cls));
+            this.classInheritance.put(cls.name, hierarchyFor(cls));
         }
     }
     
@@ -119,16 +117,16 @@ public class LoadingContext {
             if (this.classData.containsKey(cls.name)) {
                 throw new IllegalStateException("Class loaded twice: " + cls.name);
             }
-            if (!Objects.equals(this.classInheritance.get(cls.name), superNameFor(cls))) {
-                throw new IllegalStateException("Can't change super class during classloading: " + cls.name + " (was " + this.classInheritance.get(cls.name) + ", now is " + superNameFor(cls) + ")");
+            if (!Objects.equals(this.classInheritance.get(cls.name), hierarchyFor(cls))) {
+                throw new IllegalStateException("Can't change class hierarchy during classloading: " + cls.name + " (was " + this.classInheritance.get(cls.name) + ", now is " + hierarchyFor(cls) + ")");
             }
             this.classData.put(cls.name, data);
             this.loader.addURL(cls.name, BsClassLoader.classURL(Type.getObjectType(cls.name)));
         }
     }
     
-    public String getSuperClass(String cls) {
-        if ("java/lang/Object".equals(cls)) return "java/lang/Object";
+    public TypeHierarchy getInheritance(String cls) {
+        if ("java/lang/Object".equals(cls)) return new TypeHierarchy("java/lang/Object", List.of());
         synchronized (this.LOCK) {
             if (this.classInheritance.containsKey(cls)) {
                 return this.classInheritance.get(cls);
@@ -137,7 +135,11 @@ public class LoadingContext {
         try {
             Class<?> loadedClass = Class.forName(cls.replace("/", "."), false, ClassLoader.getSystemClassLoader());
             Class<?> superClass = loadedClass.getSuperclass();
-            return superClass == null ? "java/lang/Object" : superClass.getName().replace(".", "/");
+            String superName = superClass == null ? "java/lang/Object" : superClass.getName().replace(".", "/");
+            List<String> interfaces = Arrays.stream(loadedClass.getInterfaces())
+                    .map(itf -> itf.getName().replace(".", "/"))
+                    .toList();
+            return new TypeHierarchy(superName, interfaces);
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("Incomplete type hierarchy: Superclass missing for " + cls, e);
         }
@@ -166,11 +168,8 @@ public class LoadingContext {
         }
     }
     
-    private static String superNameFor(ClassNode cls) {
-        if (cls.superName == null || (cls.access & Opcodes.ACC_INTERFACE) != 0) {
-            return "java/lang/Object";
-        } else {
-            return cls.superName;
-        }
+    private static TypeHierarchy hierarchyFor(ClassNode cls) {
+        String superName = (cls.superName == null || (cls.access & Opcodes.ACC_INTERFACE) != 0) ? "java/lang/Object" : cls.superName;
+        return new TypeHierarchy(superName, List.copyOf(cls.interfaces));
     }
 }
