@@ -20,13 +20,17 @@ import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class LoadingContext {
     
     private final Object LOCK = new Object();
     private final BsClassLoader loader;
     private final Map<String, TypeHierarchy> classInheritance;
+    private final Map<String, TypeHierarchy> systemClassInheritance;
     private final Map<String, byte[]> classData;
     private int nextRuntimeId;
     private Path dumpTarget = null;
@@ -34,6 +38,7 @@ public class LoadingContext {
     public LoadingContext(BsClassLoader loader) {
         this.loader = loader;
         this.classInheritance = new HashMap<>();
+        this.systemClassInheritance = new HashMap<>();
         this.classData = new HashMap<>();
     }
 
@@ -93,7 +98,7 @@ public class LoadingContext {
             if (this.classInheritance.containsKey(cls.name)) {
                 throw new IllegalStateException("Named class registered twice: " + cls.name);
             }
-            this.classInheritance.put(cls.name, hierarchyFor(cls));
+            this.classInheritance.put(cls.name, TypeHierarchy.of(cls));
         }
     }
     
@@ -117,8 +122,8 @@ public class LoadingContext {
             if (this.classData.containsKey(cls.name)) {
                 throw new IllegalStateException("Class loaded twice: " + cls.name);
             }
-            if (!Objects.equals(this.classInheritance.get(cls.name), hierarchyFor(cls))) {
-                throw new IllegalStateException("Can't change class hierarchy during classloading: " + cls.name + " (was " + this.classInheritance.get(cls.name) + ", now is " + hierarchyFor(cls) + ")");
+            if (!Objects.equals(this.classInheritance.get(cls.name), TypeHierarchy.of(cls))) {
+                throw new IllegalStateException("Can't change class hierarchy during classloading: " + cls.name + " (was " + this.classInheritance.get(cls.name) + ", now is " + TypeHierarchy.of(cls) + ")");
             }
             this.classData.put(cls.name, data);
             this.loader.addURL(cls.name, BsClassLoader.classURL(Type.getObjectType(cls.name)));
@@ -131,15 +136,17 @@ public class LoadingContext {
             if (this.classInheritance.containsKey(cls)) {
                 return this.classInheritance.get(cls);
             }
+            if (this.systemClassInheritance.containsKey(cls)) {
+                return this.systemClassInheritance.get(cls);
+            }
         }
         try {
             Class<?> loadedClass = Class.forName(cls.replace("/", "."), false, ClassLoader.getSystemClassLoader());
-            Class<?> superClass = loadedClass.getSuperclass();
-            String superName = superClass == null ? "java/lang/Object" : superClass.getName().replace(".", "/");
-            List<String> interfaces = Arrays.stream(loadedClass.getInterfaces())
-                    .map(itf -> itf.getName().replace(".", "/"))
-                    .toList();
-            return new TypeHierarchy(superName, interfaces);
+            TypeHierarchy inheritance = TypeHierarchy.of(loadedClass);
+            synchronized (this.LOCK) {
+                this.systemClassInheritance.put(cls, inheritance);
+            }
+            return inheritance;
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("Incomplete type hierarchy: Superclass missing for " + cls, e);
         }
@@ -166,10 +173,5 @@ public class LoadingContext {
             Files.createDirectories(path.getParent());
             Files.write(path, this.classData.get(cls), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         }
-    }
-    
-    private static TypeHierarchy hierarchyFor(ClassNode cls) {
-        String superName = (cls.superName == null || (cls.access & Opcodes.ACC_INTERFACE) != 0) ? "java/lang/Object" : cls.superName;
-        return new TypeHierarchy(superName, List.copyOf(cls.interfaces));
     }
 }

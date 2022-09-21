@@ -21,6 +21,10 @@ public class Values {
         return BsValue.wrap(value);
     }
     
+    public static Object unwrapValue(BsValue value, Class<?> javaClass) {
+        return value.asJava(javaClass);
+    }
+    
     public static boolean isTrue(BsValue value) {
         return BoolType.INSTANCE.isTrue(value);
     }

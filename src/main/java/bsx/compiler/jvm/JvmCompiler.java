@@ -10,11 +10,13 @@ import bsx.compiler.ast.literal.StringLiteral;
 import bsx.compiler.ast.member.Function;
 import bsx.compiler.ast.member.MemberModifier;
 import bsx.compiler.ast.member.Property;
+import bsx.compiler.jvm.override.JavaOverrideMatcher;
 import bsx.compiler.jvm.statement.StatementCompiler;
 import bsx.compiler.jvm.util.ClassData;
 import bsx.compiler.jvm.util.CompilerContext;
 import bsx.compiler.lvt.BlockScope;
 import bsx.compiler.lvt.Scope;
+import bsx.load.LoadingContext;
 import bsx.type.ClassType;
 import bsx.type.StringType;
 import bsx.util.Bytecode;
@@ -34,7 +36,7 @@ import java.util.stream.Stream;
 
 public class JvmCompiler {
     
-    public static CompiledProgram compile(@Nullable String sourceFileName, Program program, @Nullable Scope scope) {
+    public static CompiledProgram compile(@Nullable String sourceFileName, Program program, LoadingContext context, @Nullable Scope scope) {
         Set<String> internalClassNames = program.contents().stream()
                 .flatMap(Program.Entry::asType)
                 .map(JvmCompiler::getInternalClassName)
@@ -57,6 +59,8 @@ public class JvmCompiler {
                 .toList();
         
         List<ClassNode> allClasses = Stream.concat(classes.stream(), interfaces.stream()).toList();
+
+        JavaOverrideMatcher.addBridges(allClasses, context);
         
         if (allClasses.isEmpty() && lines.isEmpty() && functions.isEmpty() && scope == null) {
             // See https://twitter.com/lang_bs/status/536838147712507904

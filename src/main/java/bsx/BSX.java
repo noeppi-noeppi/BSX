@@ -131,7 +131,7 @@ public class BSX {
         CompilerAPI api = CompilerAPI.get();
         String preprocessed = api.preprocess(bs);
         Program program = api.parseAST(preprocessed);
-        CompiledProgram compiled = api.compile(program, snapshot.scope());
+        CompiledProgram compiled = api.compile(program, Bootstrap.context(), snapshot.scope());
         MethodHandle handle = compiled.loadIntoCurrentEnvironment();
 
         try {

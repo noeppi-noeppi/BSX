@@ -6,6 +6,7 @@ import bsx.compiler.lvt.Scope;
 import bsx.compiler.parser.AstParser;
 import bsx.compiler.parser.TokenParser;
 import bsx.compiler.preprocessor.PreProcessor;
+import bsx.load.LoadingContext;
 
 import javax.annotation.Nullable;
 
@@ -32,7 +33,7 @@ public class CompilerImpl implements CompilerAPI {
         return AstParser.parseAST(preprocessedCode);
     }
     
-    public CompiledProgram compile(@Nullable String sourceFileName, Program program, @Nullable Scope scope) {
-        return JvmCompiler.compile(sourceFileName, program, scope);
+    public CompiledProgram compile(@Nullable String sourceFileName, Program program, LoadingContext context, @Nullable Scope scope) {
+        return JvmCompiler.compile(sourceFileName, program, context, scope);
     }
 }

@@ -92,6 +92,6 @@ public class Main {
             Files.writeString(tokenTarget, tokenized, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         }
         Program ast = api.parseAST(preprocessed);
-        return api.compile(path.toAbsolutePath().normalize().getFileName().toString(), ast, null);
+        return api.compile(path.toAbsolutePath().normalize().getFileName().toString(), ast, Bootstrap.context(), null);
     }
 }
