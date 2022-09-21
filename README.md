@@ -49,3 +49,34 @@ my Greeter thing:
 €greeter->say(«Hello», 10);
 Delete €greeter;
 ```
+
+### Java interoperability
+
+This example demonstrates the ability to use java classes from BSX. It will show a small window with a button and count the number of button presses in the console.
+
+```bs
+#define /(?<!\w)JFrame/javax.swing.JFrame/g
+#define /(?<!\w)JButton/javax.swing.JButton/g
+#define /(?<!\w)ActionListener/java.awt.event.ActionListener/g
+#define /(?<!\w)ActionEvent/java.awt.event.ActionEvent/g
+
+€frame = new JFrame();
+€button = new JButton(«Hello, world!»);
+€button->addActionListener(new Listener());
+€frame->add(€button);
+€frame->pack();
+€frame->setDefaultCloseOperation(JFrame::DISPOSE_ON_CLOSE);
+€frame->setLocationRelativeTo(nada);
+€frame->setVisible(true);
+
+Delete €frame, €button;
+
+class Listener implements ActionListener:
+  €counter = 0;
+  function actionPerformed(€event isProbablyA ActionEvent)
+	€this->counter = €this->counter + 1;
+	echo €this->counter, BS::EOL;
+	Delete €event;
+```
+
+*Note that `isProbablyA ActionEvent` is valid in this case, as after macro application it will expand to `isProbablyA java.awt.event.ActionEvent`.*
