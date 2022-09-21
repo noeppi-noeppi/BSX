@@ -57,7 +57,7 @@ public enum StringType implements BsType {
     @Nullable
     @Override
     public MethodHandle resolve(String name, List<BsValue> args, boolean instance, boolean special) throws ReflectiveOperationException {
-        if (instance && !special && name.equals("") && args.size() == 2) {
+        if (instance && !special && name.equals("__invoke") && args.size() == 2) {
             return this.resolve("charAt", args, true, false);
         }
         if (instance && special && name.equals("bytes") && args.size() == 1) {

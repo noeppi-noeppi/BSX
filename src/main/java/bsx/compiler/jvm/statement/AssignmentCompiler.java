@@ -54,9 +54,9 @@ public class AssignmentCompiler {
     public static InsnList compileUpdateCall(CompilerContext ctx, BlockScope scope, Labels labels, UpdateCall call) {
         InsnList instructions = new InsnList();
         instructions.add(ExpressionCompiler.compile(ctx, scope, call.expr()));
-        instructions.add(new LdcInsnNode(""));
+        instructions.add(new LdcInsnNode("__update"));
         instructions.add(CommonCode.makeExpressionArray(ctx, scope, Stream.concat(call.args().stream(), Stream.of(call.newValue())).toList()));
-        instructions.add(CommonCode.makeInstanceCall(true));
+        instructions.add(CommonCode.makeInstanceCall(false));
         instructions.add(new InsnNode(Opcodes.POP));
         return instructions;
     }

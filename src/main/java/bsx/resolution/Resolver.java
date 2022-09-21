@@ -35,6 +35,10 @@ public class Resolver {
         
         boolean isSuper = name.startsWith("super@");
         name = isSuper ? name.substring(6) : name;
+        
+        // Special case: PHP toString method is named __toString, we use the java name here, so it works with java classes
+        // The compiler will compile __toString to a regular toString method.
+        if ("__toString".equals(name) && instance && args.size() == 1 && !special) name = "toString";
 
         if ((instance || isSuper || name.equals("__construct")) && target.getAnnotation(Singleton.class) != null) {
             return null;

@@ -27,11 +27,11 @@ public record ArrayType(BsType elementType) implements BsType {
     @Nullable
     @Override
     public MethodHandle resolve(String name, List<BsValue> args, boolean instance, boolean special) throws ReflectiveOperationException {
-        if (instance && name.isEmpty()) {
-            if (!special && args.size() == 2) {
+        if (instance && !special) {
+            if (name.equals("__invoke") && args.size() == 2) {
                 // get
                 return MethodUtil.boundThis(MethodHandles.lookup().findVirtual(ArrayValue.class, "get", MethodType.methodType(BsValue.class, BsValue.class)), args.get(0));
-            } else if (special && args.size() == 3) {
+            } else if (name.equals("__update") && args.size() == 3) {
                 // set
                 return MethodUtil.boundThis(MethodHandles.lookup().findVirtual(ArrayValue.class, "set", MethodType.methodType(BsValue.class, BsValue.class, BsValue.class)), args.get(0));
             }

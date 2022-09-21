@@ -29,8 +29,7 @@ public enum AnyType implements BsType {
     private static void call() {
         throw new IllegalStateException("Unknown resolution type (any)");
     }
-
-
+    
     @Override
     public String toString() {
         return "Any";

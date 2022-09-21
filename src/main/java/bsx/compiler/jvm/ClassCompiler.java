@@ -75,7 +75,13 @@ public class ClassCompiler {
         node.access = Opcodes.ACC_PUBLIC; // Ignore source visibility modifiers
         if (function.modifiers().contains(MemberModifier.STATIC)) node.access |= Opcodes.ACC_STATIC;
         if (function.modifiers().contains(MemberModifier.FINAL)) node.access |= Opcodes.ACC_FINAL;
-        node.name = function.name();
+        if ("__toString".equals(function.name()) && function.args().size() == 0 && !function.modifiers().contains(MemberModifier.STATIC)) {
+            // Special case: Compile PHP toString method to use the java name.
+            // resolution will take care that this method can be found with __toString as well.
+            node.name = "toString";
+        } else {
+            node.name = function.name();
+        }
         node.desc = methodType.getDescriptor();
         
         if ("__construct".equals(node.name)) {

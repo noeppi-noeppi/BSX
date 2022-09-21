@@ -59,7 +59,7 @@ public class InvokeExpressionCompiler {
         } else {
             InsnList instructions = new InsnList();
             instructions.add(ExpressionCompiler.compile(ctx, scope, call.expr()));
-            instructions.add(new LdcInsnNode(""));
+            instructions.add(new LdcInsnNode("__invoke"));
             instructions.add(CommonCode.makeExpressionArray(ctx, scope, call.args()));
             instructions.add(CommonCode.makeInstanceCall(false));
             return instructions;
