@@ -46,7 +46,7 @@ public class CommonCode {
         return instructions;
     }
     
-    // Put a new BsValue array with all expression results on the stack
+    // Put a new BsValue array with all expr results on the stack
     public static InsnList makeExpressionArray(CompilerContext ctx, BlockScope scope, List<Expression> expressions) {
         InsnList instructions = new InsnList();
         instructions.add(new LdcInsnNode(expressions.size()));

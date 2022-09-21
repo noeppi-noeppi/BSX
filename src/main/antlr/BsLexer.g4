@@ -36,6 +36,7 @@ DO: 'do';
 AND: 'and';
 ECHO: 'echo';
 PASS: 'pass';
+INSTANCE_OF: 'instanceof';
 RETURN: 'return';
 DELETE: 'Delete';
 ARRAYS_OF: 'arrays of';

@@ -4,6 +4,7 @@ import bsx.BsType;
 import bsx.BsValue;
 import bsx.type.*;
 import bsx.util.ClassUtil;
+import bsx.value.BoolValue;
 import bsx.value.NoValue;
 import bsx.value.NullValue;
 
@@ -16,6 +17,10 @@ public class Types {
             throw new ClassCastException("Expected value of type " + type + ", got " + value.getType());
         }
         return value;
+    }
+    
+    public static BsValue isInstance(BsValue value, BsType type) {
+        return BoolValue.of(value.isOf(type));
     }
     
     public static BsValue castType(BsValue value, BsType type) {

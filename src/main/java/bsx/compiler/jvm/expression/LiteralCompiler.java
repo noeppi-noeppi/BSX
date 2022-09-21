@@ -73,7 +73,7 @@ public class LiteralCompiler {
             if (entry instanceof InterpolatedUtfLiteral.ConstantEntry constant) {
                 // Replace literal dollars with an escape as a dollar in the template string means insert a replacement
                 sb.append(constant.escapedUtf256()
-                        .replace("\\$", "\\u0024") // Dollars are escaped as a dollar inserts an expression if not escaped
+                        .replace("\\$", "\\u0024") // Dollars are escaped as a dollar inserts an expr if not escaped
                         .replace("$", "\\u0024")
                 );
             } else if (entry instanceof InterpolatedUtfLiteral.ExpressionEntry expr) {

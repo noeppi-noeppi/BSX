@@ -4,6 +4,7 @@ import bsx.BsType;
 import bsx.BsValue;
 import bsx.compiler.CompilerConstants;
 import bsx.compiler.ast.Expression;
+import bsx.compiler.ast.lang.InstanceCheck;
 import bsx.compiler.ast.lang.ObjectCreation;
 import bsx.compiler.ast.literal.Literal;
 import bsx.compiler.ast.name.ApplyCall;
@@ -23,10 +24,12 @@ import org.objectweb.asm.tree.LdcInsnNode;
 
 public class ExpressionCompiler {
     
-    // Put expression result on the stack
+    // Put expr result on the stack
     public static InsnList compile(CompilerContext ctx, BlockScope scope, Expression expression) {
         if (expression instanceof Literal literal) {
             return LiteralCompiler.compile(ctx, scope, literal);
+        } else if (expression instanceof InstanceCheck check) {
+            return compileInstanceCheck(ctx, scope, check);
         } else if (expression instanceof TypeCast cast) {
             return compileTypeCast(ctx, scope, cast);
         } else if (expression instanceof UnaryOperator uop) {
@@ -44,8 +47,16 @@ public class ExpressionCompiler {
         } else if (expression instanceof ApplyCall call) {
             return InvokeExpressionCompiler.compileCall(ctx, scope, call);
         } else {
-            throw new IllegalArgumentException("Can't compile expression of type " + expression.getClass());
+            throw new IllegalArgumentException("Can't compile expr of type " + expression.getClass());
         }
+    }
+    
+    private static InsnList compileInstanceCheck(CompilerContext ctx, BlockScope scope, InstanceCheck expression) {
+        InsnList instructions = new InsnList();
+        instructions.add(compile(ctx, scope, expression.expr()));
+        instructions.add(new LdcInsnNode(CompilerConstants.typeConstant(ctx, expression.type())));
+        instructions.add(Bytecode.methodCall(Opcodes.INVOKESTATIC, () -> Types.class.getMethod("isInstance", BsValue.class, BsType.class)));
+        return instructions;
     }
     
     private static InsnList compileTypeCast(CompilerContext ctx, BlockScope scope, TypeCast expression) {

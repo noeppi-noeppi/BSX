@@ -306,9 +306,15 @@ public class AstConverter {
     }
     
     private Expression expression(BsParser.ExpressionNoOperatorContext ctx) {
+        if (ctx.expressionNoInstanceOf() != null) return this.expression(ctx.expressionNoInstanceOf());
+        if (ctx.instanceOf() != null) return new InstanceCheck(this.expression(ctx.expressionNoInstanceOf()), this.type(ctx.instanceOf().stype()));
+        throw new IncompatibleClassChangeError();
+    }
+    
+    private Expression expression(BsParser.ExpressionNoInstanceOfContext ctx) {
         if (ctx.instancePropertyOrApplyCall() != null) return this.instancePropertyOrApplyCall(ctx.instancePropertyOrApplyCall());
         if (ctx.typeCast() != null) return this.typeCast(ctx.typeCast());
-        if (ctx.prefixOperator() != null) return new UnaryOperator(this.unaryOperator(ctx.prefixOperator().operatorLiteralPrefix()), this.expression(ctx.prefixOperator().expressionNoOperator()));
+        if (ctx.prefixOperator() != null) return new UnaryOperator(this.unaryOperator(ctx.prefixOperator().operatorLiteralPrefix()), this.expression(ctx.prefixOperator().expressionNoInstanceOf()));
         if (ctx.expressionNoProperty() != null) return this.expression(ctx.expressionNoProperty());
         throw new IncompatibleClassChangeError();
     }
@@ -348,7 +354,7 @@ public class AstConverter {
     
     private TypeCast typeCast(BsParser.TypeCastContext ctx) {
         if (ctx.parenExpression() != null) return new TypeCast(this.type(ctx.stype()), this.expression(ctx.parenExpression().expression()));
-        if (ctx.expressionNoOperator() != null) return new TypeCast(this.type(ctx.stype()), this.expression(ctx.expressionNoOperator()));
+        if (ctx.expressionNoInstanceOf() != null) return new TypeCast(this.type(ctx.stype()), this.expression(ctx.expressionNoInstanceOf()));
         throw new IncompatibleClassChangeError();
     }
     

@@ -47,8 +47,8 @@ andStatement: AND COLON START_BLOCK statement+ END_BLOCK;
 unlessStatement: START_BLOCK statement+ END_BLOCK START_GROUP UNLESS expression END_GROUP GREEK_QUESTION_MARK;
 unlessElseStatement: START_BLOCK statement+ END_BLOCK ELSE unlessStatement;
 
-assignStatement: target=expressionNoOperator EQUAL expression SEMICOLON;
-updateStatement: target=expressionNoOperator paramList EQUAL expression SEMICOLON;
+assignStatement: target=expressionNoInstanceOf EQUAL expression SEMICOLON;
+updateStatement: target=expressionNoInstanceOf paramList EQUAL expression SEMICOLON;
 
 operatorLiteralInfix: INFIX_OPERATOR_NO_COMMA_NO_MINUS | MINUS_OPERATOR | COMMA;
 operatorLiteralInfixNoComma: INFIX_OPERATOR_NO_COMMA_NO_MINUS | MINUS_OPERATOR;
@@ -57,7 +57,8 @@ operatorLiteralPrefix: BANG_OPERATOR | MINUS_OPERATOR;
 expression: expressionNoOperator (operatorLiteralInfix expressionNoOperator)*;
 expressionNoComma: expressionNoOperator (operatorLiteralInfixNoComma expressionNoOperator)*;
 parenExpression: START_GROUP expression END_GROUP;
-expressionNoOperator: typeCast | prefixOperator | instancePropertyOrApplyCall | expressionNoProperty;
+expressionNoOperator: instanceOf | expressionNoInstanceOf;
+expressionNoInstanceOf: typeCast | prefixOperator | instancePropertyOrApplyCall | expressionNoProperty;
 expressionNoProperty: parenExpression | staticProperty | parentProperty | literal | objectCreation
   | inlineIncremetVariableFirst | inlineIncremetVariableLast | variable | name;
 
@@ -94,9 +95,10 @@ instancePropertyOrApplyCallPart: INSTANCE_ACCESS IDENT | paramList;
 staticProperty: stype STATIC_ACCESS IDENT;
 parentProperty: PARENT STATIC_ACCESS IDENT;
 
-prefixOperator: operatorLiteralPrefix expressionNoOperator;
+prefixOperator: operatorLiteralPrefix expressionNoInstanceOf;
 objectCreation: NEW stype paramList;
-typeCast: START_GROUP stype END_GROUP (parenExpression | expressionNoOperator);
+instanceOf: expressionNoInstanceOf INSTANCE_OF stype;
+typeCast: START_GROUP stype END_GROUP (parenExpression | expressionNoInstanceOf);
 
 inlineIncremetVariableFirst: (INLINE_PLUS | INLINE_MINUS) variable;
 inlineIncremetVariableLast: variable (INLINE_PLUS | INLINE_MINUS);
