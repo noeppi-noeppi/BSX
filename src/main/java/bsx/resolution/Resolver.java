@@ -55,11 +55,13 @@ public class Resolver {
                 }
                 current = current.getSuperclass();
             }
-            for (int i = 0; i < ifaces.size(); i++) {
-                MethodHandle result = findIn(target, ifaces.get(i), name, args, instance, special, false, isSuper);
-                if (result != null) return result;
-                for (Class<?> iface : cls.getInterfaces()) {
-                    if (!ifaces.contains(iface)) ifaces.add(iface);
+            if (!isSuper) {
+                for (int i = 0; i < ifaces.size(); i++) {
+                    MethodHandle result = findIn(target, ifaces.get(i), name, args, instance, special, false, false);
+                    if (result != null) return result;
+                    for (Class<?> iface : cls.getInterfaces()) {
+                        if (!ifaces.contains(iface)) ifaces.add(iface);
+                    }
                 }
             }
             return null;

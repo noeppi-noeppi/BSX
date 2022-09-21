@@ -3,15 +3,20 @@ parser grammar BsParser;
 options { tokenVocab=BsLexer; }
 
 program: code* EOF;
-code: class | function | statement;
+code: class | interface | function | statement;
 
-class: modifiers CLASS typeName super? COLON START_BLOCK member+ END_BLOCK;
+class: modifiers CLASS typeName super? implements? COLON START_BLOCK member+ END_BLOCK;
+interface: modifiers INTERFACE typeName interfaceSuper? COLON START_BLOCK interfaceMember+ END_BLOCK;
 super: EXTENDS typeName;
+implements: IMPLEMENTS typeNames;
+interfaceSuper: EXTENDS typeNames;
 member: function | property;
+interfaceMember: abstractFunction | function;
 
 property: modifiers variable (EQUAL expression)? SEMICOLON;
 
 function: modifiers FUNCTION memberName functionParamList typeHint? START_BLOCK statement+ END_BLOCK;
+abstractFunction: modifiers FUNCTION memberName functionParamList typeHint? SEMICOLON;
 functionParamList: START_GROUP (functionParam (COMMA functionParam)*)? END_GROUP;
 functionParam: variable typeHint?;
 
@@ -112,6 +117,7 @@ stype: (ARRAY_OF ptype) | stypeNoArray;
 stypeNoArray: typeName;
 ptype: ARRAYS_OF* typeName;
 typeName: typeNameReserved | typeNameNested;
+typeNames: typeName (COMMA typeName)*;
 typeNameSimple: IDENT (DOT IDENT)*;
 typeNameNested: typeNameSimple (STATIC_ACCESS IDENT)*;
 typeNameReserved: NULL | NOTHING | UNDEFINED | NADA | EMPTY;

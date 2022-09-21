@@ -68,13 +68,22 @@ public class ClassCompiler {
         return node;
     }
     
-    public static MethodNode compileFunction(Function function, ClassData data) {
+    public static MethodNode compileFunction(Function function, ClassData data, boolean isInterface) {
+        if (isInterface && !function.modifiers().contains(MemberModifier.STATIC) && !function.lines().isEmpty()) {
+            throw new IllegalArgumentException("Interface function can't contain code");
+        }
+        
         MethodNode node = new MethodNode();
         Type methodType = makeMethodType(function.args().size());
         
         node.access = Opcodes.ACC_PUBLIC; // Ignore source visibility modifiers
         if (function.modifiers().contains(MemberModifier.STATIC)) node.access |= Opcodes.ACC_STATIC;
-        if (function.modifiers().contains(MemberModifier.FINAL)) node.access |= Opcodes.ACC_FINAL;
+        if (isInterface && !function.modifiers().contains(MemberModifier.STATIC)) {
+            if (function.modifiers().contains(MemberModifier.FINAL)) throw new IllegalStateException("Final function in interface");
+            node.access |= Opcodes.ACC_ABSTRACT;
+        } else {
+            if (function.modifiers().contains(MemberModifier.FINAL)) node.access |= Opcodes.ACC_FINAL;
+        }
         if ("__toString".equals(function.name()) && function.args().size() == 0 && !function.modifiers().contains(MemberModifier.STATIC)) {
             // Special case: Compile PHP toString method to use the java name.
             // resolution will take care that this method can be found with __toString as well.
@@ -85,50 +94,62 @@ public class ClassCompiler {
         node.desc = methodType.getDescriptor();
         
         if ("__construct".equals(node.name)) {
-            data.setHasConstructMethod();
+            if (isInterface) {
+                throw new IllegalStateException("Constructor declaration in interface");
+            } else {
+                data.setHasConstructMethod();
+            }
         }
         
-        BlockScope scope = new BlockScope((node.access & Opcodes.ACC_STATIC) == 0, function.args().size());
-        
-        node.instructions.add(CommonCode.lineNumber(function.lineNumber()));
-        node.parameters = new ArrayList<>();
-        node.localVariables = new ArrayList<>();
-        
-        LabelNode startLabel = new LabelNode();
-        startLabel.getLabel();
-        
-        node.instructions.add(startLabel);
-        
-        // Wrap args into variables
-        int staticOffset = (node.access & Opcodes.ACC_STATIC) == 0 ? 1 : 0;
-        for (int i = 0; i < function.args().size(); i++) {
-            Parameter arg = function.args().get(i);
-            LocalVariableNode lvt = scope.newVariable(arg.variable(), startLabel);
-            node.parameters.add(new ParameterNode(arg.variable().name(), 0));
-            node.localVariables.add(lvt);
-            node.instructions.add(new LdcInsnNode(arg.variable().name()));
-            node.instructions.add(new VarInsnNode(Opcodes.ALOAD, staticOffset + i));
-            node.instructions.add(CommonCode.typeCheck(data, arg.hint()));
-            node.instructions.add(Bytecode.methodCall(Opcodes.INVOKESTATIC, () -> Language.class.getMethod("makeVariable", String.class, BsValue.class)));
-            node.instructions.add(new VarInsnNode(Opcodes.ASTORE, lvt.index));
-        }
+        if ((node.access & Opcodes.ACC_STATIC) != 0 || !isInterface) {
+            BlockScope scope = new BlockScope((node.access & Opcodes.ACC_STATIC) == 0, function.args().size());
 
-        Supplier<InsnList> returnCode = () -> {
-            InsnList instructions = new InsnList();
-            instructions.add(CommonCode.typeCheck(data, function.returnTypeHint()));
-            instructions.add(new InsnNode(Opcodes.ARETURN));
-            return instructions;
-        };
-        
-        CompilerContext ctx = new CompilerContext((node.access & Opcodes.ACC_STATIC) == 0, returnCode, node.localVariables::add, data);
-        
-        node.instructions.add(StatementCompiler.compile(ctx, scope, function.lines()));
-        
-        // If there is no explicit return statement, return no value
-        node.instructions.add(new LdcInsnNode(CompilerConstants.valueConstant(NoValue.INSTANCE)));
-        node.instructions.add(returnCode.get());
-        
-        node.instructions.add(scope.end());
+            node.instructions.add(CommonCode.lineNumber(function.lineNumber()));
+            node.parameters = new ArrayList<>();
+            node.localVariables = new ArrayList<>();
+
+            LabelNode startLabel = new LabelNode();
+            startLabel.getLabel();
+
+            node.instructions.add(startLabel);
+
+            // Wrap args into variables
+            int staticOffset = (node.access & Opcodes.ACC_STATIC) == 0 ? 1 : 0;
+            for (int i = 0; i < function.args().size(); i++) {
+                Parameter arg = function.args().get(i);
+                LocalVariableNode lvt = scope.newVariable(arg.variable(), startLabel);
+                node.parameters.add(new ParameterNode(arg.variable().name(), 0));
+                node.localVariables.add(lvt);
+                node.instructions.add(new LdcInsnNode(arg.variable().name()));
+                node.instructions.add(new VarInsnNode(Opcodes.ALOAD, staticOffset + i));
+                node.instructions.add(CommonCode.typeCheck(data, arg.hint()));
+                node.instructions.add(Bytecode.methodCall(Opcodes.INVOKESTATIC, () -> Language.class.getMethod("makeVariable", String.class, BsValue.class)));
+                node.instructions.add(new VarInsnNode(Opcodes.ASTORE, lvt.index));
+            }
+
+            Supplier<InsnList> returnCode = () -> {
+                InsnList instructions = new InsnList();
+                instructions.add(CommonCode.typeCheck(data, function.returnTypeHint()));
+                instructions.add(new InsnNode(Opcodes.ARETURN));
+                return instructions;
+            };
+
+            CompilerContext ctx = new CompilerContext((node.access & Opcodes.ACC_STATIC) == 0, returnCode, node.localVariables::add, data);
+
+            node.instructions.add(StatementCompiler.compile(ctx, scope, function.lines()));
+
+            // If there is no explicit return statement, return no value
+            node.instructions.add(new LdcInsnNode(CompilerConstants.valueConstant(NoValue.INSTANCE)));
+            node.instructions.add(returnCode.get());
+
+            node.instructions.add(scope.end());
+        } else {
+            node.parameters = new ArrayList<>();
+            for (int i = 0; i < function.args().size(); i++) {
+                Parameter arg = function.args().get(i);
+                node.parameters.add(new ParameterNode(arg.variable().name(), 0));
+            }
+        }
         
         return node;
     }

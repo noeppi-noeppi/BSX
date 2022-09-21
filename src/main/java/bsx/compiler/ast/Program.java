@@ -11,6 +11,10 @@ public record Program(List<Entry> contents) {
         default Stream<Line> asLine() { return Stream.empty(); }
         default Stream<Function> asFunction() { return Stream.empty(); }
         default Stream<BsClass> asClass() { return Stream.empty(); }
+        default Stream<BsInterface> asInterface() { return Stream.empty(); }
+        default Stream<BsTypeNode<?>> asType() {
+            return Stream.concat(this.asClass(), this.asInterface()).<BsTypeNode<?>>map(t -> t).limit(1);
+        }
     }
     
     public record LineEntry(Line line) implements Entry {
@@ -34,6 +38,14 @@ public record Program(List<Entry> contents) {
         @Override
         public Stream<BsClass> asClass() {
             return Stream.of(this.cls());
+        }
+    }
+    
+    public record InterfaceEntry(BsInterface itf) implements Entry {
+
+        @Override
+        public Stream<BsInterface> asInterface() {
+            return Stream.of(this.itf());
         }
     }
 }

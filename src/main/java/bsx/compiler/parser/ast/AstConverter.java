@@ -40,6 +40,7 @@ public class AstConverter {
     
     private Program.Entry programEntry(BsParser.CodeContext ctx) {
         if (ctx.class_() != null) return new Program.ClassEntry(this.bsClass(ctx.class_()));
+        if (ctx.interface_() != null) return new Program.InterfaceEntry(this.bsInterface(ctx.interface_()));
         if (ctx.function() != null) return new Program.FunctionEntry(this.topLevelFunction(ctx.function()));
         if (ctx.statement() != null) return new Program.LineEntry(this.line(ctx.statement()));
         throw new IncompatibleClassChangeError();
@@ -49,8 +50,17 @@ public class AstConverter {
         List<MemberModifier> modifiers = this.modifiers(ctx.modifiers(), MemberModifier.STATIC, MemberModifier.READONLY);
         String name = this.typeName(ctx.typeName());
         String superName = ctx.super_() == null ? null : this.typeName(ctx.super_().typeName());
+        List<String> interfaces = ctx.implements_() == null ? List.of() : this.typeNames(ctx.implements_().typeNames());
         List<Member> members = ctx.member().stream().map(this::member).toList();
-        return new BsClass(modifiers, name, superName, members);
+        return new BsClass(modifiers, name, superName, interfaces, members);
+    }
+    
+    private BsInterface bsInterface(BsParser.InterfaceContext ctx) {
+        List<MemberModifier> modifiers = this.modifiers(ctx.modifiers(), MemberModifier.STATIC, MemberModifier.READONLY);
+        String name = this.typeName(ctx.typeName());
+        List<String> interfaces = ctx.interfaceSuper() == null ? List.of() : this.typeNames(ctx.interfaceSuper().typeNames());
+        List<InterfaceMember> members = ctx.interfaceMember().stream().map(this::member).toList();
+        return new BsInterface(modifiers, name, interfaces, members);
     }
 
     private List<MemberModifier> modifiers(BsParser.ModifiersContext ctx, MemberModifier... disallowed) {
@@ -86,6 +96,12 @@ public class AstConverter {
         throw new IncompatibleClassChangeError();
     }
     
+    private InterfaceMember member(BsParser.InterfaceMemberContext ctx) {
+        if (ctx.abstractFunction() != null) return this.interfaceFunction(ctx.abstractFunction());
+        if (ctx.function() != null) return this.interfaceFunction(ctx.function());
+        throw new IncompatibleClassChangeError();
+    }
+    
     private Property property(BsParser.PropertyContext ctx) {
         List<MemberModifier> modifiers = this.modifiers(ctx.modifiers(), MemberModifier.FINAL);
         String name = this.variable(ctx.variable()).name();
@@ -101,6 +117,21 @@ public class AstConverter {
     private Function function(BsParser.FunctionContext ctx) {
         List<MemberModifier> modifiers = this.modifiers(ctx.modifiers(), MemberModifier.READONLY);
         return this.anyFunction(modifiers, ctx);
+    }
+    
+    private Function interfaceFunction(BsParser.FunctionContext ctx) {
+        List<MemberModifier> modifiers = this.modifiers(ctx.modifiers(), MemberModifier.READONLY);
+        if (!modifiers.contains(MemberModifier.STATIC)) throw new IllegalStateException("Interface method can't contain any code");
+        return this.anyFunction(modifiers, ctx);
+    }
+    
+    private Function interfaceFunction(BsParser.AbstractFunctionContext ctx) {
+        List<MemberModifier> modifiers = this.modifiers(ctx.modifiers(), MemberModifier.READONLY);
+        if (modifiers.contains(MemberModifier.STATIC)) throw new IllegalStateException("Static interface method without any code");
+        String name = this.memberName(ctx.memberName());
+        List<Parameter> parameters = ctx.functionParamList().functionParam().stream().map(this::param).toList();
+        TypeHint returnTypeHint = ctx.typeHint() == null ? null : this.typeHint(ctx.typeHint());
+        return new Function(ctx.getStart().getLine(), modifiers, name, parameters, returnTypeHint, List.of());
     }
     
     private Function anyFunction(List<MemberModifier> modifiers, BsParser.FunctionContext ctx) {
@@ -201,6 +232,10 @@ public class AstConverter {
             }
         }
         throw new IncompatibleClassChangeError();
+    }
+    
+    private List<String> typeNames(BsParser.TypeNamesContext ctx) {
+        return ctx.typeName().stream().map(this::typeName).toList();
     }
     
     private String typeNameSimple(BsParser.TypeNameSimpleContext ctx) {
