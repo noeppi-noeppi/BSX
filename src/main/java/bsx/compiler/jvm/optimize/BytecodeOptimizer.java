@@ -62,7 +62,7 @@ public class BytecodeOptimizer {
             case 5: return new InsnNode(Opcodes.ICONST_5);
         }
         if (value >= Byte.MIN_VALUE && value < Byte.MAX_VALUE) return new IntInsnNode(Opcodes.BIPUSH, value & 0xFF);
-        if (value >= Short.MIN_VALUE && value < Short.MAX_VALUE) return new IntInsnNode(Opcodes.BIPUSH, value & 0xFFFF);
+        if (value >= Short.MIN_VALUE && value < Short.MAX_VALUE) return new IntInsnNode(Opcodes.SIPUSH, value & 0xFFFF);
         return new LdcInsnNode(value);
     }
 }
