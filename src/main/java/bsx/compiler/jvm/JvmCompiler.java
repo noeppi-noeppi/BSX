@@ -10,6 +10,7 @@ import bsx.compiler.ast.literal.StringLiteral;
 import bsx.compiler.ast.member.Function;
 import bsx.compiler.ast.member.MemberModifier;
 import bsx.compiler.ast.member.Property;
+import bsx.compiler.jvm.optimize.BytecodeOptimizer;
 import bsx.compiler.jvm.override.JavaOverrideMatcher;
 import bsx.compiler.jvm.statement.StatementCompiler;
 import bsx.compiler.jvm.util.ClassData;
@@ -71,6 +72,10 @@ public class JvmCompiler {
             return new CompiledProgram(null, allClasses);
         } else {
             ClassNode main = compileMainCode(sourceFileName, lines, functions, scope, internalNameExists);
+            
+            BytecodeOptimizer.optimize(main);
+            BytecodeOptimizer.optimize(allClasses);
+            
             return new CompiledProgram(main, allClasses);
         }
     }
