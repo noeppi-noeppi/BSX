@@ -19,12 +19,8 @@ public class BytecodeOptimizer {
             if (method.instructions != null) {
                 InsnList instructions = method.instructions;
                 for (AbstractInsnNode instruction : instructions) {
-                    if (instruction instanceof InsnNode simple && simple.getOpcode() == Opcodes.NOP) {
-                        instructions.remove(instruction);
-                    } else {
-                        AbstractInsnNode newNode = optimizeInstruction(instruction);
-                        if (newNode != null) instructions.set(instruction, newNode);
-                    }
+                    AbstractInsnNode newNode = optimizeInstruction(instruction);
+                    if (newNode != null) instructions.set(instruction, newNode);
                 }
             }
         }
