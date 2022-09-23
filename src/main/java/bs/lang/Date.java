@@ -10,7 +10,7 @@ import java.time.temporal.ChronoField;
 import java.util.Objects;
 
 @SuppressWarnings("ClassCanBeRecord")
-public final class Date {
+public final class Date implements Comparable<Date> {
     
     public static final Date FORMAT_DATE = new Date(ZonedDateTime.of(2014, 11, 21, 17, 10, 0, 0, ZoneId.of("EET")));
     
@@ -89,6 +89,11 @@ public final class Date {
     public boolean equals(Object obj) {
         if (!(obj instanceof Date date)) return false;
         return Objects.equals(this.time.toLocalDateTime(), date.time.toLocalDateTime()) && Objects.equals(this.time.getOffset(), date.time.getOffset());
+    }
+
+    @Override
+    public int compareTo(Date obj) {
+        return this.time.compareTo(obj.time);
     }
 
     @Override

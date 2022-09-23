@@ -45,7 +45,11 @@ public class BridgeFactory {
         
         node.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, owner, original.name, original.desc, false));
         
-        if (methodType.getReturnType().getSort() == Type.VOID) {
+        if (node.name.equals("toString") && node.desc.equals("()Ljava/lang/String;")) {
+            // Special case: Call toString on object
+            node.instructions.add(Bytecode.methodCall(Opcodes.INVOKEVIRTUAL, () -> Object.class.getMethod("toString")));
+            node.instructions.add(new InsnNode(Opcodes.ARETURN));
+        } else if (methodType.getReturnType().getSort() == Type.VOID) {
             node.instructions.add(new InsnNode(Opcodes.POP));
             node.instructions.add(new InsnNode(Opcodes.RETURN));
         } else {

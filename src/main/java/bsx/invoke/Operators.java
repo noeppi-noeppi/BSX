@@ -5,11 +5,13 @@ import bsx.BsValue;
 import bsx.type.BoolType;
 import bsx.type.StringType;
 import bsx.util.LooseEquality;
+import bsx.util.NumericComparison;
 import bsx.value.*;
 
 import java.lang.invoke.MethodHandle;
 import java.util.Objects;
 import java.util.OptionalDouble;
+import java.util.OptionalInt;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.IntBinaryOperator;
 import java.util.stream.Stream;
@@ -81,27 +83,13 @@ public class Operators {
     }
     
     public static BsValue lower(BsValue op1, BsValue op2) {
-        double num1 = Double.NaN;
-        if (op1 instanceof IntegerValue iv) num1 = iv.value;
-        else if (op1 instanceof FloatingValue fv) num1 = fv.value;
-        
-        double num2 = Double.NaN;
-        if (op2 instanceof IntegerValue iv) num2 = iv.value;
-        else if (op2 instanceof FloatingValue fv) num2 = fv.value;
-        
-        return BoolValue.of(num1 < num2);
+        OptionalInt result = NumericComparison.compare(op1, op2);
+        return BoolValue.of(result.isPresent() && result.getAsInt() < 0);
     }
     
     public static BsValue lowerEqual(BsValue op1, BsValue op2) {
-        double num1 = Double.NaN;
-        if (op1 instanceof IntegerValue iv) num1 = iv.value;
-        else if (op1 instanceof FloatingValue fv) num1 = fv.value;
-
-        double num2 = Double.NaN;
-        if (op2 instanceof IntegerValue iv) num2 = iv.value;
-        else if (op2 instanceof FloatingValue fv) num2 = fv.value;
-
-        return BoolValue.of(num1 <= num2);
+        OptionalInt result = NumericComparison.compare(op1, op2);
+        return BoolValue.of(result.isPresent() && result.getAsInt() <= 0);
     }
     
     public static BsValue greater(BsValue op1, BsValue op2) {

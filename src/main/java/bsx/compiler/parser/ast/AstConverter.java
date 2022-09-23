@@ -106,7 +106,8 @@ public class AstConverter {
         List<MemberModifier> modifiers = this.modifiers(ctx.modifiers(), MemberModifier.FINAL);
         String name = this.variable(ctx.variable()).name();
         Expression expr = ctx.expression() == null ? null : this.expression(ctx.expression());
-        return new Property(ctx.expression().getStart().getLine(), modifiers, name, expr);
+        int startLine = ctx.expression() == null ? ctx.getStart().getLine() : ctx.expression().getStart().getLine();
+        return new Property(startLine, modifiers, name, expr);
     }
     
     private Function topLevelFunction(BsParser.FunctionContext ctx) {

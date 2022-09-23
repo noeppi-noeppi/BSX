@@ -24,6 +24,8 @@ public class JavaOverrideMatcher {
         for (ClassNode node : classes) {
             if ((node.access & Opcodes.ACC_INTERFACE) == 0) {
                 addBridges(resolver, node);
+                MethodNode equals = EqualsFactory.makeEquals(node);
+                if (equals != null) node.methods.add(equals);
             }
         }
     }
