@@ -22,7 +22,7 @@ public class BlockResolver {
             replaced.append(line).append("\n");
         }
         if (0 < lastLevel) {
-            replaced.append(PreProcessor.END_BLOCK.repeat(lastLevel));
+            replaced.append(PreProcessor.END_BLOCK.repeat(lastLevel)).append("\n");
         }
         return replaced.toString();
     }

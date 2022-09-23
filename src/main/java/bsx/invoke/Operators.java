@@ -113,6 +113,25 @@ public class Operators {
     }
     
     public static BsValue multiply(BsValue op1, BsValue op2) {
+        if (op1 instanceof StringValue str) {
+            OptionalInt num = getIntegral(op2);
+            if (num.isPresent() && num.getAsInt() >= 0) {
+                if (str.getPrintableString().isPresent()) {
+                    return new StringValue(str.getType(), str.getPrintableString().get().repeat(num.getAsInt()));
+                } else {
+                    int n = num.getAsInt();
+                    int[] data = str.getRaw().toArray();
+                    int[] newData = new int[data.length * n];
+                    for (int i = 0; i < n; i++) {
+                        System.arraycopy(data, 0, newData, data.length * i, data.length);
+                    }
+                    return new StringValue(str.getType(), newData);
+                }
+            } else {
+                return NullValue.UNDEFINED;
+            }
+        }
+        if (op2 instanceof StringValue) return multiply(op2, op1);
         return numberBasedOp(op1, op2, (a, b) -> a * b, (a, b) -> a * b);
     }
     
@@ -165,6 +184,16 @@ public class Operators {
             return new FloatingValue(floats.applyAsDouble(fv1.value, fv2.value));
         } else {
             return FloatingValue.NaN;
+        }
+    }
+    
+    private static OptionalInt getIntegral(BsValue op) {
+        if (op instanceof IntegerValue iv) {
+            return OptionalInt.of(iv.value);
+        } else if (op instanceof FloatingValue fv && fv.value == (int) fv.value) {
+            return OptionalInt.of((int) fv.value);
+        } else {
+            return OptionalInt.empty();
         }
     }
 }
