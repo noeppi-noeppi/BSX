@@ -132,8 +132,8 @@ public class CompilerConstants {
                     fv.value
             );
         } else if (value instanceof StringValue sv) {
-            if (sv.getType() == StringType.UTF256) {
-                throw new IllegalArgumentException("Can't make utf256 string constant from built string.");
+            if (sv.getPrintableString().isEmpty()) {
+                throw new IllegalArgumentException("Can't make non printable (utf256) string constant from built string.");
             } else {
                 return new ConstantDynamic(
                         "value", Type.getType(BsValue.class).getDescriptor(),

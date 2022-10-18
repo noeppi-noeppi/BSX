@@ -62,7 +62,7 @@ public class Values {
     }
     
     public static BsValue makeStringValue(MethodHandles.Lookup lookup, String name, Class<?> type, BsType stringType, String value) {
-        if (!(stringType instanceof StringType st) || st == StringType.UTF256) {
+        if (!(stringType instanceof StringType st)) {
             throw new IncompatibleClassChangeError(stringType.toString());
         } else {
             return new StringValue(st, value);

@@ -3,6 +3,7 @@ package bs;
 import bsx.BSX;
 import bsx.BsValue;
 import bsx.resolution.NoLookup;
+import bsx.resolution.Singleton;
 import bsx.resolution.SpecialInvoke;
 import bsx.util.StackTraceCleaner;
 import bsx.value.ArrayValue;
@@ -14,6 +15,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 
+@Singleton
 public final class Predef {
     
     @SpecialInvoke

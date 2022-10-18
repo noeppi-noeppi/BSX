@@ -58,7 +58,7 @@ public class LooseEquality {
             } catch (NumberFormatException e) {
                 //
             }
-            if (!"nan".equals(str) && str.contains("infinity")) {
+            if (!"nan".equals(str) && !str.contains("infinity")) {
                 try {
                     return OptionalDouble.of(Double.parseDouble(str));
                 } catch (NumberFormatException e) {

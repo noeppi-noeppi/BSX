@@ -9,6 +9,7 @@ import bsx.compiler.jvm.util.CommonCode;
 import bsx.compiler.jvm.util.CompilerContext;
 import bsx.compiler.lvt.BlockScope;
 import bsx.invoke.Values;
+import bsx.type.StringType;
 import bsx.util.Bytecode;
 import bsx.util.string.StringEscapeHelper;
 import bsx.value.BoolValue;
@@ -59,10 +60,20 @@ public class LiteralCompiler {
         } else if (literal instanceof StringLiteral sl) {
             return new LdcInsnNode(CompilerConstants.valueConstant(new StringValue(sl.type(), StringEscapeHelper.unescape(sl.escapedString()))));
         } else if (literal instanceof UtfLiteral ul) {
-            StringEscapeHelper.unescapeUtf256(ul.escapedUtf256()); // Throw exception if there are invalid escapes
-            return new LdcInsnNode(CompilerConstants.utfConstant(ul.escapedUtf256()));
+            return compileUtf256(ul);
         } else {
             throw new IllegalArgumentException("Can't compile literal of type " + literal.getClass());
+        }
+    }
+    
+    public static AbstractInsnNode compileUtf256(UtfLiteral literal) {
+        // Throw exception if there are invalid escapes
+        int[] utf256 = StringEscapeHelper.unescapeUtf256(literal.escapedUtf256());
+        StringValue value = new StringValue(StringType.UTF256, utf256);
+        if (value.getPrintableString().isPresent()) {
+            return new LdcInsnNode(CompilerConstants.valueConstant(value));
+        } else {
+            return new LdcInsnNode(CompilerConstants.utfConstant(literal.escapedUtf256()));
         }
     }
     
@@ -83,21 +94,25 @@ public class LiteralCompiler {
         }
         String template = sb.toString();
         
-        Type[] argTypes = new Type[expressions.size()];
-        Arrays.fill(argTypes, Type.getType(Object.class));
-        Type methodType = Type.getMethodType(Type.getType(BsValue.class), argTypes);
-        
         InsnList instructions = new InsnList();
         
-        for (Expression expr : expressions) {
-            instructions.add(ExpressionCompiler.compile(ctx, scope, expr));
+        if (expressions.isEmpty()) {
+            instructions.add(compileUtf256(new UtfLiteral(template)));
+        } else {
+            Type[] argTypes = new Type[expressions.size()];
+            Arrays.fill(argTypes, Type.getType(Object.class));
+            Type methodType = Type.getMethodType(Type.getType(BsValue.class), argTypes);
+
+            for (Expression expr : expressions) {
+                instructions.add(ExpressionCompiler.compile(ctx, scope, expr));
+            }
+
+            instructions.add(new InvokeDynamicInsnNode(
+                    "interpolate", methodType.getDescriptor(),
+                    Bytecode.methodHandle(Opcodes.H_INVOKESTATIC, () -> Values.class.getMethod("makeUtf256ValueInterpolation", MethodHandles.Lookup.class, String.class, MethodType.class, String.class)),
+                    template
+            ));
         }
-        
-        instructions.add(new InvokeDynamicInsnNode(
-                "interpolate", methodType.getDescriptor(),
-                Bytecode.methodHandle(Opcodes.H_INVOKESTATIC, () -> Values.class.getMethod("makeUtf256ValueInterpolation", MethodHandles.Lookup.class, String.class, MethodType.class, String.class)),
-                template
-        ));
         
         return instructions;
     }

@@ -70,11 +70,6 @@ public class InvokeExpressionCompiler {
     public static InsnList compilePropertyAccess(CompilerContext ctx, BlockScope scope, Property property, boolean special, List<Expression> args) {
         InsnList instructions = new InsnList();
         
-        if ("EVALUATE".equals(property.name())) {
-            // Possibly a string evaluation, take scope snapshot
-            instructions.add(CompilerConstants.takeSnapshot(scope));
-        }
-        
         if (property instanceof Name) {
             instructions.add(new LdcInsnNode(Type.getObjectType(ctx.data().className)));
             if (ctx.hasThisLiteral()) {
@@ -94,6 +89,11 @@ public class InvokeExpressionCompiler {
         
         instructions.add(new LdcInsnNode((property instanceof ParentProperty ? "super@" : "") + property.name()));
         instructions.add(CommonCode.makeExpressionArray(ctx, scope, args));
+
+        if ("EVALUATE".equals(property.name())) {
+            // Possibly a string evaluation, take scope snapshot
+            instructions.add(CompilerConstants.takeSnapshot(scope));
+        }
         
         if (property instanceof Name) {
             instructions.add(CommonCode.makeLocalCall(special));

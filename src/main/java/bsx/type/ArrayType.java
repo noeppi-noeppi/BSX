@@ -16,7 +16,7 @@ public record ArrayType(BsType elementType) implements BsType {
     
     @Override
     public BsValue cast(BsValue value) {
-        if (value.isOf(this)) {
+        if (value instanceof ArrayValue && value.isOf(this)) {
             // Check that the element type matches to allow the cast
             return value;
         } else {
