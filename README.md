@@ -27,7 +27,7 @@ It should be noted, that decompiling the generated java bytecode won't work as i
 *Taken from the above talk:*
 
 ```bs
-#define /^my (.*?) thing:$/class \1:/
+#define /^my \(.*\) thing:$/class \1:/
 
 my Greeter thing:
 
@@ -55,10 +55,10 @@ Delete €greeter;
 This example demonstrates the ability to use java classes from BSX. It will show a small window with a button and count the number of button presses in the console.
 
 ```bs
-#define /(?<!\w)JFrame/javax.swing.JFrame/g
-#define /(?<!\w)JButton/javax.swing.JButton/g
-#define /(?<!\w)ActionListener/java.awt.event.ActionListener/g
-#define /(?<!\w)ActionEvent/java.awt.event.ActionEvent/g
+#define /\W\zsJFrame/javax.swing.JFrame/g
+#define /\W\zsJButton/javax.swing.JButton/g
+#define /\W\zsActionListener/java.awt.event.ActionListener/g
+#define /\W\zsActionEvent/java.awt.event.ActionEvent/g
 
 €frame = new JFrame();
 €button = new JButton(«Hello, world!»);

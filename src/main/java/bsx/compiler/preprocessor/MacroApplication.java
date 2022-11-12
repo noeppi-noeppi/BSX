@@ -1,5 +1,7 @@
 package bsx.compiler.preprocessor;
 
+import bsx.regex.VimRegex;
+
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,36 +39,28 @@ public class MacroApplication {
         if (!m.matches()) return null;
 
         String pattern = m.group(1).replace("\\/", "/");
+        String replacement = m.group(2).replace("\\/", "/");
 
-        String replacement = m.group(2)
-                .replace("\\/", "/")
-                .replace("$", "\\$")
-                .replaceAll("\\\\(\\d+)", "\\$$1");
+        boolean global = false;
+        boolean ignoreCase = false;
 
-        StringBuilder flagsPart = new StringBuilder();
-        boolean all = false;
         for (char chr : m.group(3).toCharArray()) {
             switch (chr) {
-                case 'm' -> flagsPart.append("(?m)");
-                case 's' -> flagsPart.append("(?s)");
-                case 'i' -> flagsPart.append("(?i)");
-                case 'x' -> flagsPart.append("(?x)");
-                case 'u', 'a' -> flagsPart.append("(?u)");
-                case 'g' -> all = true;
+                case 'g' -> global = true;
+                case 'i' -> ignoreCase = true;
+                case 'I' -> ignoreCase = false;
+                case 'c' -> {} // confirm in vim, ignored here
+                default -> throw new IllegalArgumentException("Invalid regex modifier: " + chr);
             }
         }
 
-        return new Macro(Pattern.compile(flagsPart + pattern), replacement, all);
+        return new Macro(VimRegex.compile(pattern, global, ignoreCase), replacement);
     }
 
-    private record Macro(Pattern regex, String replacement, boolean all) {
+    private record Macro(VimRegex.Pattern regex, String replacement) {
 
         public String applyTo(String line) {
-            if (this.all) {
-                return this.regex.matcher(line).replaceAll(this.replacement);
-            } else {
-                return this.regex.matcher(line).replaceFirst(this.replacement);
-            }
+            return VimRegex.replace(line, regex, replacement);
         }
     }
 }

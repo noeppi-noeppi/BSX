@@ -1,0 +1,4 @@
+Hacky code to use IdeaVim RegExp class in BSX.
+See https://github.com/JetBrains/ideavim/blob/master/src/main/java/com/maddyhome/idea/vim/regexp/RegExp.kt
+
+src/main/kotlin/bsx/regex/RegExp.kt is licensed under the vim license. See there for more info.

@@ -1,1 +1,3 @@
 rootProject.name = 'BSX'
+
+include(':RegEx')
