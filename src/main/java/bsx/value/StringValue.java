@@ -112,12 +112,12 @@ public class StringValue implements BsValue {
 
     @Override
     public boolean matchesJava(Class<?> cls) {
-        return cls == BsValue.class || (cls == String.class && this.string != null) || (cls == Character.class && this.string != null && this.string.length() == 1);
+        return cls == BsValue.class || ((cls == String.class || cls == CharSequence.class || cls == Object.class) && this.string != null) || (cls == Character.class && this.string != null && this.string.length() == 1);
     }
 
     @Override
     public <T> T asJava(Class<T> cls) {
-        if (cls == String.class) {
+        if (cls == String.class || cls == CharSequence.class || cls == Object.class) {
             //noinspection unchecked
             return (T) this.toString();
         } else if (cls == Character.class && this.string != null && this.string.length() == 1) {

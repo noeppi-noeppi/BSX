@@ -112,7 +112,7 @@ public class CommonCode {
         if (node.name == null) node.name = "block";
         node.desc = Bytecode.getType(methodType).getDescriptor();
 
-        node.instructions.add(scope.end());
+        node.instructions.add(childScope.end());
         
         Handle handle = ctx.data().addHelperMethod(node);
         return scope.makeBlock(handle);

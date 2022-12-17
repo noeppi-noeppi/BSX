@@ -22,13 +22,13 @@ public enum BoolValue implements BsValue {
 
     @Override
     public boolean matchesJava(Class<?> cls) {
-        return cls == BsValue.class || cls == Boolean.class;
+        return cls == BsValue.class || cls == Boolean.class || cls == Object.class;
     }
 
     @Override
     public <T> T asJava(Class<T> cls) {
         //noinspection unchecked
-        return cls == Boolean.class ? (T) Boolean.valueOf(this.value) : BsValue.super.asJava(cls);
+        return (cls == Boolean.class || cls == Object.class) ? (T) Boolean.valueOf(this.value) : BsValue.super.asJava(cls);
     }
 
     @Override

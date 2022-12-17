@@ -29,7 +29,7 @@ public class IntegerValue implements BsValue {
 
     @Override
     public boolean matchesJava(Class<?> cls) {
-        return cls == BsValue.class || cls == Byte.class || cls == Short.class || cls == Integer.class || cls == Long.class || cls == Float.class || cls == Double.class;
+        return cls == BsValue.class || cls == Byte.class || cls == Short.class || cls == Integer.class || cls == Long.class || cls == Float.class || cls == Double.class || cls == Object.class;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class IntegerValue implements BsValue {
         } else if (cls == Short.class) {
             //noinspection unchecked
             return (T) Short.valueOf((short) this.value);
-        } else if (cls == Integer.class) {
+        } else if (cls == Integer.class || cls == Object.class) {
             //noinspection unchecked
             return (T) Integer.valueOf(this.value);
         } else if (cls == Long.class) {

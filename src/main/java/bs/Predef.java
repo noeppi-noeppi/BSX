@@ -6,14 +6,13 @@ import bsx.resolution.NoLookup;
 import bsx.resolution.Singleton;
 import bsx.resolution.SpecialInvoke;
 import bsx.util.StackTraceCleaner;
-import bsx.value.ArrayValue;
-import bsx.value.FloatingValue;
-import bsx.value.StringValue;
+import bsx.value.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Singleton
 public final class Predef {
@@ -41,6 +40,14 @@ public final class Predef {
     
     public static BsValue array(BsValue... elems) {
         return new ArrayValue(List.of(elems));
+    }
+    
+    public static BsValue in_array(BsValue value, BsValue array) {
+        if (array instanceof ArrayValue av) {
+            return BoolValue.of(av.values().stream().anyMatch(v -> Objects.equals(value, v)));
+        } else {
+            return NullValue.EMPTY;
+        }
     }
     
     @NoLookup

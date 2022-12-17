@@ -169,9 +169,15 @@ public sealed class BlockScope permits EmptyScope {
             methodType = methodType.insertParameterTypes(0, Object.class);
         }
         methodType = methodType.changeReturnType(MethodHandle.class);
+
+        // Change implicit this arg of method type to owner of target handle
+        Type asmType = Bytecode.getType(methodType);
+        if (needsThisArg) {
+            asmType = Bytecode.replaceArgument(asmType, 0, Type.getObjectType(blockImpl.getOwner()));
+        }
         
         instructions.add(new InvokeDynamicInsnNode(
-                "block", Bytecode.getType(methodType).getDescriptor(),
+                "block", asmType.getDescriptor(),
                 Bytecode.methodHandle(Opcodes.H_INVOKESTATIC, () -> Language.class.getMethod("makeBlock", MethodHandles.Lookup.class, String.class, MethodType.class, MethodHandle.class)),
                 blockImpl
         ));

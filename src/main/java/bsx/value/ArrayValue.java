@@ -53,7 +53,7 @@ public class ArrayValue implements BsValue {
 
     @Override
     public boolean matchesJava(Class<?> cls) {
-        if (cls == BsValue.class || cls == List.class) {
+        if (cls == Object.class || cls == BsValue.class || cls == List.class) {
             return true;
         } else if (cls.isArray()) {
             for (BsValue elem : this.values) {
@@ -75,7 +75,7 @@ public class ArrayValue implements BsValue {
         } else if (cls == List.class) {
             //noinspection unchecked
             return (T) this.values(); // Unmodifiable view
-        } else if (cls.isArray()) {
+        } else if (cls.isArray() || cls == Object.class) {
             Object[] array = (Object[]) Array.newInstance(cls.componentType(), this.values.size());
             for (int i = 0; i < this.values.size(); i++) {
                 array[i] = this.values.get(i).asJava(cls.componentType());

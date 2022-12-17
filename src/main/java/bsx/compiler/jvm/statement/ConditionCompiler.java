@@ -37,7 +37,11 @@ public class ConditionCompiler {
         instructions.add(ExpressionCompiler.compile(ctx, scope, expr));
         instructions.add(Bytecode.methodCall(Opcodes.INVOKESTATIC, () -> Values.class.getMethod("isTrue", BsValue.class)));
         instructions.add(new JumpInsnNode(Opcodes.IFNE, end));
-        instructions.add(StatementCompiler.compile(ctx, BlockScope.makeSameMethodInnerScope(scope), ifFalse, labels));
+
+        BlockScope falseScope = BlockScope.makeSameMethodInnerScope(scope);
+        instructions.add(StatementCompiler.compile(ctx, falseScope, ifFalse, labels));
+        instructions.add(falseScope.end());
+        
         instructions.add(end);
         
         return instructions;
@@ -56,10 +60,18 @@ public class ConditionCompiler {
         instructions.add(ExpressionCompiler.compile(ctx, scope, expr));
         instructions.add(Bytecode.methodCall(Opcodes.INVOKESTATIC, () -> Values.class.getMethod("isTrue", BsValue.class)));
         instructions.add(new JumpInsnNode(Opcodes.IFEQ, else_));
-        instructions.add(StatementCompiler.compile(ctx, BlockScope.makeSameMethodInnerScope(scope), ifTrue, labels));
+        
+        BlockScope trueScope = BlockScope.makeSameMethodInnerScope(scope);
+        instructions.add(StatementCompiler.compile(ctx, trueScope, ifTrue, labels));
+        instructions.add(trueScope.end());
+        
         instructions.add(new JumpInsnNode(Opcodes.GOTO, end));
         instructions.add(else_);
-        instructions.add(StatementCompiler.compile(ctx, BlockScope.makeSameMethodInnerScope(scope), ifFalse, labels));
+        
+        BlockScope falseScope = BlockScope.makeSameMethodInnerScope(scope);
+        instructions.add(StatementCompiler.compile(ctx, falseScope, ifFalse, labels));
+        instructions.add(falseScope.end());
+        
         instructions.add(end);
         
         return instructions;

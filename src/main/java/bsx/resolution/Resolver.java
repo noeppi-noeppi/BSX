@@ -8,10 +8,7 @@ import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -91,7 +88,7 @@ public class Resolver {
             // For java classes (that have not been compiled by BSX
             for (Constructor<?> ctor : cls.getConstructors()) {
                 if (ctor.isAnnotationPresent(NoLookup.class)) continue;
-                allPossible.add(MethodHandles.lookup().unreflectConstructor(ctor));
+                allPossible.add(unreflection(ctor).unreflectConstructor(ctor));
             }
             
             // BSX compiled classes use a no-arg constructor and an instance method named __construct
@@ -110,8 +107,8 @@ public class Resolver {
                     if (Modifier.isStatic(method.getModifiers())) continue;
                     if (method.isAnnotationPresent(SpecialInvoke.class)) continue;
                     if (canInvokeAs(true, method, target, false)) {
-                        MethodHandle realConstructor = MethodHandles.lookup().unreflectConstructor(noArgCtor);
-                        MethodHandle instanceCall = MethodHandles.lookup().unreflect(method);
+                        MethodHandle realConstructor = unreflection(noArgCtor).unreflectConstructor(noArgCtor);
+                        MethodHandle instanceCall = unreflection(method).unreflect(method);
                         MethodType targetType = instanceCall.type().dropParameterTypes(0, 1).changeReturnType(realConstructor.type().returnType());
                         MethodHandle ctorChain = MethodHandles.lookup().findStatic(Resolver.class, "constructorWithInitialisation", MethodType.methodType(Object.class, MethodHandle.class, MethodHandle.class, Object[].class));
                         MethodHandle withHandles = MethodHandles.insertArguments(ctorChain, 0, realConstructor, instanceCall);
@@ -130,7 +127,7 @@ public class Resolver {
                             if (field.getName().equals(SPECIAL_NAME)) continue;
                             if (instance == Modifier.isStatic(field.getModifiers())) continue;
                             if (!Objects.equals(field.getName(), name)) continue;
-                            allPossible.add(MethodHandles.lookup().unreflectGetter(field));
+                            allPossible.add(unreflection(field).unreflectGetter(field));
                         }
                     } else if (args.size() == instanceLen + 1) {
                         for (Field field : cls.getFields()) {
@@ -139,7 +136,7 @@ public class Resolver {
                             if (instance == Modifier.isStatic(field.getModifiers())) continue;
                             if (Modifier.isFinal(field.getModifiers())) continue;
                             if (!Objects.equals(field.getName(), name)) continue;
-                            allPossible.add(MethodHandles.lookup().unreflectSetter(field));
+                            allPossible.add(unreflection(field).unreflectSetter(field));
                         }
                     }
                     for (Method method : cls.getMethods()) {
@@ -148,7 +145,7 @@ public class Resolver {
                         if (!method.isAnnotationPresent(SpecialInvoke.class)) continue;
                         if (!Objects.equals(method.getName(), name)) continue;
                         if (canInvokeAs(instance, method, target, canFindStaticsAsInstance)) {
-                            allPossible.add(MethodHandles.lookup().unreflect(method));
+                            allPossible.add(unreflection(method).unreflect(method));
                         }
                     }
                 }
@@ -160,19 +157,28 @@ public class Resolver {
                     if (!Objects.equals(method.getName(), name)) continue;
                     if (canInvokeAs(instance, method, target, canFindStaticsAsInstance)) {
                         if (isSuper) {
-                            MethodHandle handle = MethodHandles.lookup().unreflect(method);
+                            MethodHandle handle = unreflection(method).unreflect(method);
                             // Use privileged lookup to get INVOKESPECIAL handle
                             Class<?>[] argTypes = new Class<?>[Modifier.isStatic(method.getModifiers()) ? handle.type().parameterCount() : handle.type().parameterCount() - 1];
                             System.arraycopy(handle.type().parameterArray(), Modifier.isStatic(method.getModifiers()) ? 0 : 1, argTypes, 0, argTypes.length);
                             allPossible.add(BSX.LOOKUP.findSpecial(cls, method.getName(), MethodType.methodType(handle.type().returnType(), argTypes), target));
                         } else {
-                            allPossible.add(MethodHandles.lookup().unreflect(method));
+                            allPossible.add(unreflection(method).unreflect(method));
                         }
                     }
                 }
             }
         }
         return selectBy(allPossible, args, instance);
+    }
+    
+    private static MethodHandles.Lookup unreflection(Member member) {
+        // Use privileged lookup for private classes
+        if (!Modifier.isPublic(member.getDeclaringClass().getModifiers())) {
+            return BSX.LOOKUP;
+        } else {
+            return MethodHandles.lookup();
+        }
     }
     
     private static boolean canInvokeAs(boolean instance, Method method, Class<?> target, boolean canFindStaticsAsInstance) {

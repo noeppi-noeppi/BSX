@@ -29,7 +29,7 @@ public class FloatingValue implements BsValue {
 
     @Override
     public boolean matchesJava(Class<?> cls) {
-        return cls == BsValue.class || cls == Byte.class || cls == Short.class || cls == Integer.class || cls == Long.class || cls == Float.class || cls == Double.class;
+        return cls == BsValue.class || cls == Byte.class || cls == Short.class || cls == Integer.class || cls == Long.class || cls == Float.class || cls == Double.class || cls == Object.class;
     }
 
     @Override
@@ -49,7 +49,7 @@ public class FloatingValue implements BsValue {
         } else if (cls == Float.class) {
             //noinspection unchecked
             return (T) Float.valueOf((float) this.value);
-        } else if (cls == Double.class) {
+        } else if (cls == Double.class || cls == Object.class) {
             //noinspection unchecked
             return (T) Double.valueOf(this.value);
         } else {

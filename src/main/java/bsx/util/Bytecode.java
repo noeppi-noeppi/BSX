@@ -23,7 +23,15 @@ public class Bytecode {
         }
         return Type.getMethodType(returnType, argTypes);
     }
-
+    
+    public static Type replaceArgument(Type methodType, int idx, Type type) {
+        Type[] argTypes = methodType.getArgumentTypes();
+        Type[] copy = new Type[argTypes.length];
+        System.arraycopy(argTypes, 0, copy, 0, argTypes.length);
+        copy[idx] = type;
+        return Type.getMethodType(methodType.getReturnType(), copy);
+    }
+    
     public static Type wrap(Type type) {
         return switch (type.getSort()) {
             case Type.VOID -> Type.getType(Void.class);
