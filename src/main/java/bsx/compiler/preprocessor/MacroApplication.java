@@ -5,6 +5,7 @@ import bsx.regex.VimRegex;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,18 +16,27 @@ public class MacroApplication {
     public static String applyMacros(String code) {
         List<Macro> currentMacros = new ArrayList<>();
         StringBuilder replaced = new StringBuilder();
+        int lnum = 0;
         for (String line : code.split("\n")) {
+            lnum += 1;
             Macro macro = parseMacro(line);
             if (macro != null) {
                 currentMacros.add(macro);
                 // Add empty line, so line numbers reported by the parser still match
                 replaced.append("\n");
             } else {
-                String replacedLine = line;
-                for (Macro m : currentMacros) {
-                    replacedLine = m.applyTo(replacedLine);
+                String lastLine = line;
+                for (int itr = 0; itr <= 100; itr++) {
+                    if (itr == 100) throw new IllegalStateException("Too many levels of macro expansion on line " + lnum + ": " + line + " -> " + lastLine);
+                    boolean changed = false;
+                    for (Macro m : currentMacros) {
+                        String newLine = m.applyTo(lastLine);
+                        if (!Objects.equals(lastLine, newLine)) changed = true;
+                        lastLine = newLine;
+                    }
+                    if (!changed) break;
                 }
-                replaced.append(replacedLine).append("\n");
+                replaced.append(lastLine).append("\n");
             }
         }
         return replaced.toString();

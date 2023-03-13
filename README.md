@@ -16,6 +16,7 @@ However, there are a few notable differences.
   * Instance properties must be declared explicitly in order to be accessible with `€this->name`.
   * `HALT_AND_CATCH_FIRE` is not a keyword but rather a global method. That means it must be written with a semicolon.
   * `#!` starts a comment, but only at the beginning of the first line. This is to allow shebangs in bs files.
+  * It is impossible to jump into an `unless` block, even into the first statement. Instead, there is a no-op command named `pass` that can be labeled and put in front of the `unless` block.
 
 ### How it works
 
@@ -49,6 +50,32 @@ my Greeter thing:
 €greeter->say(«Hello», 10);
 Delete €greeter;
 ```
+
+### Multithreading
+
+Another example, taken from the above talk, that shows how do multithreading:
+
+```bs
+public function Say(€things areProbably Strings)
+  €i = -1;
+  €threads = '''';
+  42 pass;
+	€threads ,= ''do:'' , BS::EOL;
+  else
+	€threads ,= ''and:'' , BS::EOL;
+  (unless €i !!=! -1);
+  €threads ,= ''  echo «'' , (ANSI) €things(€i) , '' »;'' , BS::EOL;
+	goto 42;
+  (unless --€i < -len(€things));
+  €threads->EVALUATE;
+  echo BS::EOL;
+  Delete €things, €threads, €i;
+
+Say(array(«first», «second», «third»));
+```
+
+Note the `42 pass` statement that is required, as you can't jump directly into the `unless` block.
+Also note the cast to `(ANSI)` because BSX is picky about what strings you can concatenate and won't allow a concatenation of `ANSI` and `String` (which is utf256).
 
 ### Java interoperability
 
