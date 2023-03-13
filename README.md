@@ -53,7 +53,7 @@ Delete €greeter;
 
 ### Multithreading
 
-*Another example, taken from the above talk, that shows how do multithreading:*
+*Another example, taken from the above talk, that shows how to do multithreading:*
 
 ```bs
 public function Say(€things areProbably Strings)
