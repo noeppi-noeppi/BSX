@@ -53,7 +53,7 @@ Delete €greeter;
 
 ### Multithreading
 
-Another example, taken from the above talk, that shows how do multithreading:
+*Another example, taken from the above talk, that shows how do multithreading:*
 
 ```bs
 public function Say(€things areProbably Strings)
@@ -74,7 +74,7 @@ public function Say(€things areProbably Strings)
 Say(array(«first», «second», «third»));
 ```
 
-Note the `42 pass` statement that is required, as you can't jump directly into the `unless` block.
+Note that the `42 pass` statement is required, as you can't jump directly into the `unless` block.
 Also note the cast to `(ANSI)` because BSX is picky about what strings you can concatenate and won't allow a concatenation of `ANSI` and `String` (which is utf256).
 
 ### Java interoperability
@@ -106,4 +106,4 @@ class Listener implements ActionListener:
 	Delete €event;
 ```
 
-*Note that `isProbablyA ActionEvent` is valid in this case, as after macro application it will expand to `isProbablyA java.awt.event.ActionEvent`.*
+Note that `isProbablyA ActionEvent` is valid in this case, as after macro application it will expand to `isProbablyA java.awt.event.ActionEvent`.
