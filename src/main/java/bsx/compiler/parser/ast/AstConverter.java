@@ -368,23 +368,23 @@ public class AstConverter {
     }
     
     private Expression expression(BsParser.ExpressionNoPropertyContext ctx) {
-        if (ctx.parenExpression() != null) return this.expression(ctx.parenExpression().expression());
+        if (ctx.parenExpression() != null) return new Parens(this.expression(ctx.parenExpression().expression()));
         if (ctx.staticProperty() != null) return new StaticProperty(this.type(ctx.staticProperty().stype()), ctx.staticProperty().IDENT().getText());
         if (ctx.parentProperty() != null) return new ParentProperty(ctx.parentProperty().IDENT().getText());
         if (ctx.literal() != null) return this.literal(ctx.literal());
         if (ctx.objectCreation() != null) return new ObjectCreation(this.type(ctx.objectCreation().stype()), this.paramList(ctx.objectCreation().paramList()));
-        if (ctx.inlineIncremetVariableFirst() != null) return this.inlineIncrement(ctx.inlineIncremetVariableFirst());
-        if (ctx.inlineIncremetVariableLast() != null) return this.inlineIncrement(ctx.inlineIncremetVariableLast());
+        if (ctx.inlineIncrementVariableFirst() != null) return this.inlineIncrement(ctx.inlineIncrementVariableFirst());
+        if (ctx.inlineIncrementVariableLast() != null) return this.inlineIncrement(ctx.inlineIncrementVariableLast());
         if (ctx.variable() != null) return this.variable(ctx.variable());
         if (ctx.name() != null) return new Name(ctx.name().IDENT().getText());
         throw new IncompatibleClassChangeError();
     }
     
-    private InlineIncrement inlineIncrement(BsParser.InlineIncremetVariableFirstContext ctx) {
+    private InlineIncrement inlineIncrement(BsParser.InlineIncrementVariableFirstContext ctx) {
         return new InlineIncrement(this.variable(ctx.variable()), ctx.INLINE_PLUS() != null, true);
     }
     
-    private InlineIncrement inlineIncrement(BsParser.InlineIncremetVariableLastContext ctx) {
+    private InlineIncrement inlineIncrement(BsParser.InlineIncrementVariableLastContext ctx) {
         return new InlineIncrement(this.variable(ctx.variable()), ctx.INLINE_PLUS() != null, false);
     }
     

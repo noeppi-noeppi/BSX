@@ -6,6 +6,7 @@ import bsx.compiler.CompilerConstants;
 import bsx.compiler.ast.Expression;
 import bsx.compiler.ast.lang.InstanceCheck;
 import bsx.compiler.ast.lang.ObjectCreation;
+import bsx.compiler.ast.lang.Parens;
 import bsx.compiler.ast.literal.Literal;
 import bsx.compiler.ast.name.ApplyCall;
 import bsx.compiler.ast.name.InlineIncrement;
@@ -26,7 +27,11 @@ public class ExpressionCompiler {
     
     // Put expr result on the stack
     public static InsnList compile(CompilerContext ctx, BlockScope scope, Expression expression) {
-        if (expression instanceof Literal literal) {
+        if (expression instanceof Parens parens) {
+            // Needed, so ApplyCall doesn't compile into a property access when the front part is
+            // enclosed in parens.
+            return compile(ctx, scope, parens.expression());
+        } else if (expression instanceof Literal literal) {
             return LiteralCompiler.compile(ctx, scope, literal);
         } else if (expression instanceof InstanceCheck check) {
             return compileInstanceCheck(ctx, scope, check);

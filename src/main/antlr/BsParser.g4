@@ -65,7 +65,7 @@ parenExpression: START_GROUP expression END_GROUP;
 expressionNoOperator: instanceOf | expressionNoInstanceOf;
 expressionNoInstanceOf: typeCast | prefixOperator | instancePropertyOrApplyCall | expressionNoProperty;
 expressionNoProperty: parenExpression | staticProperty | parentProperty | literal | objectCreation
-  | inlineIncremetVariableFirst | inlineIncremetVariableLast | variable | name;
+  | inlineIncrementVariableFirst | inlineIncrementVariableLast | variable | name;
 
 paramList: START_GROUP (expressionNoComma (COMMA expressionNoComma)*)? END_GROUP;
 
@@ -105,8 +105,8 @@ objectCreation: NEW stype paramList;
 instanceOf: expressionNoInstanceOf INSTANCE_OF stype;
 typeCast: START_GROUP stype END_GROUP (parenExpression | expressionNoInstanceOf);
 
-inlineIncremetVariableFirst: (INLINE_PLUS | INLINE_MINUS) variable;
-inlineIncremetVariableLast: variable (INLINE_PLUS | INLINE_MINUS);
+inlineIncrementVariableFirst: (INLINE_PLUS | INLINE_MINUS) variable;
+inlineIncrementVariableLast: variable (INLINE_PLUS | INLINE_MINUS);
 variable: VARIABLE;
 name: IDENT;
 
