@@ -3,9 +3,7 @@ package bsx.compiler.preprocessor;
 import bsx.regex.VimRegex;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,21 +13,26 @@ public class MacroApplication {
 
     public static String applyMacros(String code) {
         List<Macro> currentMacros = new ArrayList<>();
+        List<Macro> currentNonConfirmMacros = new ArrayList<>();
         StringBuilder replaced = new StringBuilder();
         int lnum = 0;
         for (String line : code.split("\n")) {
             lnum += 1;
             Macro macro = parseMacro(line);
             if (macro != null) {
-                currentMacros.add(macro);
+                currentMacros.add(0, macro);
+                if (!macro.confirm()) currentNonConfirmMacros.add(0, macro);
                 // Add empty line, so line numbers reported by the parser still match
                 replaced.append("\n");
             } else {
                 String lastLine = line;
+                for (Macro m : currentMacros) {
+                    lastLine = m.applyTo(lastLine);
+                }
                 for (int itr = 0; itr <= 100; itr++) {
                     if (itr == 100) throw new IllegalStateException("Too many levels of macro expansion on line " + lnum + ": " + line + " -> " + lastLine);
                     boolean changed = false;
-                    for (Macro m : currentMacros) {
+                    for (Macro m : currentNonConfirmMacros) {
                         String newLine = m.applyTo(lastLine);
                         if (!Objects.equals(lastLine, newLine)) changed = true;
                         lastLine = newLine;
@@ -53,21 +56,22 @@ public class MacroApplication {
 
         boolean global = false;
         boolean ignoreCase = false;
-
+        boolean confirm = false;
+        
         for (char chr : m.group(3).toCharArray()) {
             switch (chr) {
                 case 'g' -> global = true;
                 case 'i' -> ignoreCase = true;
                 case 'I' -> ignoreCase = false;
-                case 'c' -> {} // confirm in vim, ignored here
+                case 'c' -> confirm = true;
                 default -> throw new IllegalArgumentException("Invalid regex modifier: " + chr);
             }
         }
 
-        return new Macro(VimRegex.compile(pattern, global, ignoreCase), replacement);
+        return new Macro(VimRegex.compile(pattern, global, ignoreCase), replacement, confirm);
     }
 
-    private record Macro(VimRegex.Pattern regex, String replacement) {
+    private record Macro(VimRegex.Pattern regex, String replacement, boolean confirm) {
 
         public String applyTo(String line) {
             return VimRegex.replace(line, regex, replacement);

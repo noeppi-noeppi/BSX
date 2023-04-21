@@ -17,6 +17,7 @@ However, there are a few notable differences.
   * `HALT_AND_CATCH_FIRE` is not a keyword but rather a global method. That means it must be written with a semicolon.
   * `#!` starts a comment, but only at the beginning of the first line. This is to allow shebangs in bs files.
   * It is impossible to jump into an `unless` block, even into the first statement. Instead, there is a no-op command named `pass` that can be labeled and put in front of the `unless` block.
+  * The `c` regex-modifier (which is `confirm` in vim) marks a macro as single-pass, which means it is only expanded once in a line. All other macros will expand as long as they match.
 
 ### How it works
 
@@ -82,10 +83,10 @@ Also note the cast to `(ANSI)` because BSX is picky about what strings you can c
 This example demonstrates the ability to use java classes from BSX. It will show a small window with a button and count the number of button presses in the console.
 
 ```bs
-#define /\W\zsJFrame/javax.swing.JFrame/g
-#define /\W\zsJButton/javax.swing.JButton/g
-#define /\W\zsActionListener/java.awt.event.ActionListener/g
-#define /\W\zsActionEvent/java.awt.event.ActionEvent/g
+#define /\W\zsJFrame/javax.swing.JFrame/gc
+#define /\W\zsJButton/javax.swing.JButton/gc
+#define /\W\zsActionListener/java.awt.event.ActionListener/gc
+#define /\W\zsActionEvent/java.awt.event.ActionEvent/gc
 
 €frame = new JFrame();
 €button = new JButton(«Hello, world!»);
