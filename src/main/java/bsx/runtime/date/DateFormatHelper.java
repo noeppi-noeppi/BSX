@@ -7,9 +7,9 @@ import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 public class DateFormatHelper {
@@ -39,6 +39,26 @@ public class DateFormatHelper {
             1L, "PM"
     );
     
+    private static final Map<Long, String> ERA_LOWER = Map.of(
+            0L, "bc",
+            1L, "ad"
+    );
+    
+    private static final Map<Long, String> ERA_UPPER = Map.of(
+            0L, "BC",
+            1L, "AD"
+    );
+    
+    private static final Map<Long, String> ISO_ERA_LOWER = Map.of(
+            0L, "ce",
+            1L, "bce"
+    );
+    
+    private static final Map<Long, String> ISO_ERA_UPPER = Map.of(
+            0L, "CE",
+            1L, "BCE"
+    );
+    
     private static final Map<Long, String> DAYS_WITH_SUFFIX;
 
     static {
@@ -56,75 +76,95 @@ public class DateFormatHelper {
     }
 
     public static DateTimeFormatter getFormatter(String formattedSample) {
-        DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
         String current = formattedSample;
+        Builder builder = new Builder();
         while (!current.isEmpty()) current = addNext(formattedSample, current, builder);
-        return builder.toFormatter(Locale.ENGLISH); // Must use english, for full text month and weekday to work
+        return builder.build(Locale.ENGLISH); // Must use english, for full text month and weekday to work
     }
     
-    private static String addNext(String fullString, String str, DateTimeFormatterBuilder builder) {
+    private static String addNext(String fullString, String str, Builder builder) {
         String whitespace = toString(str.codePoints().takeWhile(Character::isWhitespace));
-        if (!whitespace.isEmpty()) builder.appendLiteral(whitespace);
+        if (!whitespace.isEmpty()) builder.add(b -> b.appendLiteral(whitespace));
         str = toString(str.codePoints().dropWhile(Character::isWhitespace));
-        if (str.startsWith("2014")) {
-            builder.appendValue(ChronoField.YEAR);
+        if (str.startsWith("1416582600")) {
+            builder.add(b -> b.appendValue(ChronoField.INSTANT_SECONDS));
+            return str.substring(10);
+        } else if (str.startsWith("2014")) {
+            builder.add((ctx, b) -> b.appendValue(ctx.hasEra() ? ChronoField.YEAR_OF_ERA : ChronoField.YEAR));
             return str.substring(4);
         } else if (str.startsWith("14")) {
-            builder.appendValueReduced(ChronoField.YEAR, 2, 2, 0);
+            builder.add(b -> b.appendValueReduced(ChronoField.YEAR, 2, 2, 0));
             return str.substring(2);
         } else if (str.startsWith("11")) {
-            builder.appendValue(ChronoField.MONTH_OF_YEAR, 2);
+            builder.add(b -> b.appendValue(ChronoField.MONTH_OF_YEAR, 2));
             return str.substring(2);
         } else if (str.startsWith("November")) {
-            builder.appendText(ChronoField.MONTH_OF_YEAR, TextStyle.FULL);
+            builder.add(b -> b.appendText(ChronoField.MONTH_OF_YEAR, TextStyle.FULL));
             return str.substring(8);
         } else if (str.startsWith("Nov")) {
-            builder.appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT);
+            builder.add(b -> b.appendText(ChronoField.MONTH_OF_YEAR, TextStyle.SHORT));
             return str.substring(3);
         } else if (str.startsWith("21st")) {
-            builder.appendText(ChronoField.DAY_OF_MONTH, DAYS_WITH_SUFFIX);
+            builder.add(b -> b.appendText(ChronoField.DAY_OF_MONTH, DAYS_WITH_SUFFIX));
             return str.substring(4);
         } else if (str.startsWith("21")) {
-            builder.appendValue(ChronoField.DAY_OF_MONTH, 2);
+            builder.add(b -> b.appendValue(ChronoField.DAY_OF_MONTH, 2));
             return str.substring(2);
         } else if (str.startsWith("Friday")) {
-            builder.appendText(ChronoField.DAY_OF_WEEK, TextStyle.FULL);
+            builder.add(b -> b.appendText(ChronoField.DAY_OF_WEEK, TextStyle.FULL));
             return str.substring(6);
         } else if (str.startsWith("Fri")) {
-            builder.appendText(ChronoField.DAY_OF_WEEK, TextStyle.SHORT);
+            builder.add(b -> b.appendText(ChronoField.DAY_OF_WEEK, TextStyle.SHORT));
             return str.substring(3);
         } else if (str.startsWith("17")) {
-            builder.appendValue(ChronoField.HOUR_OF_DAY, 2);
+            builder.add(b -> b.appendValue(ChronoField.HOUR_OF_DAY, 2));
             return str.substring(2);
         } else if (str.startsWith("05")) {
-            builder.appendValue(ChronoField.HOUR_OF_AMPM, 2);
+            builder.add(b -> b.appendValue(ChronoField.HOUR_OF_AMPM, 2));
             return str.substring(2);
         } else if (str.startsWith("pm")) {
-            builder.appendText(ChronoField.AMPM_OF_DAY, AM_PM_LOWER);
+            builder.add(b -> b.appendText(ChronoField.AMPM_OF_DAY, AM_PM_LOWER));
             return str.substring(2);
         } else if (str.startsWith("PM")) {
-            builder.appendText(ChronoField.AMPM_OF_DAY, AM_PM_UPPER);
+            builder.add(b -> b.appendText(ChronoField.AMPM_OF_DAY, AM_PM_UPPER));
+            return str.substring(2);
+        } else if (str.startsWith("ad")) {
+            builder.add(b -> b.appendText(ChronoField.ERA, ERA_LOWER));
+            builder.setHasEra();
+            return str.substring(2);
+        } else if (str.startsWith("AD")) {
+            builder.add(b -> b.appendText(ChronoField.ERA, ERA_UPPER));
+            builder.setHasEra();
+            return str.substring(2);
+        } else if (str.startsWith("ce")) {
+            builder.add(b -> b.appendText(ChronoField.ERA, ISO_ERA_LOWER));
+            builder.setHasEra();
+            return str.substring(2);
+        } else if (str.startsWith("CE")) {
+            builder.add(b -> b.appendText(ChronoField.ERA, ISO_ERA_UPPER));
+            builder.setHasEra();
             return str.substring(2);
         } else if (str.startsWith("10")) {
-            builder.appendValue(ChronoField.MINUTE_OF_HOUR, 2);
+            builder.add(b -> b.appendValue(ChronoField.MINUTE_OF_HOUR, 2));
             return str.substring(2);
         } else if (str.startsWith("00")) {
-            builder.appendValue(ChronoField.SECOND_OF_MINUTE, 2);
+            builder.add(b -> b.appendValue(ChronoField.SECOND_OF_MINUTE, 2));
             return str.substring(2);
         } else if (str.startsWith("EET")) {
-            builder.appendZoneText(TextStyle.SHORT);
+            builder.add(b -> b.appendZoneText(TextStyle.SHORT));
             return str.substring(3);
         } else if (str.startsWith("+0200")) {
-            builder.appendOffset("+HHMM", "Z");
+            builder.add(b -> b.appendOffset("+HHMM", "Z"));
             return str.substring(5);
         } else if (str.startsWith("+02:00")) {
-            builder.appendOffset("+HH:MM", "Z");
+            builder.add(b -> b.appendOffset("+HH:MM", "Z"));
             return str.substring(6);
         } else if (str.startsWith("+02")) {
-            builder.appendOffset("+HH", "Z");
+            builder.add(b -> b.appendOffset("+HH", "Z"));
             return str.substring(3);
         } else if (!Character.isDigit(str.charAt(0))) {
-            builder.appendLiteral("" + str.charAt(0));
+            String chr = Character.toString(str.charAt(0));
+            builder.add(b -> b.appendLiteral(chr));
             return str.substring(1);
         } else {
             throw new IllegalArgumentException("Invalid date pattern: " + fullString);
@@ -132,24 +172,33 @@ public class DateFormatHelper {
     }
     
     public static ZonedDateTime queryFromPartial(TemporalAccessor accessor) {
-        boolean hasMonthOrDay = accessor.isSupported(ChronoField.MONTH_OF_YEAR) || accessor.isSupported(ChronoField.DAY_OF_MONTH);
-        boolean hasHour = accessor.isSupported(ChronoField.HOUR_OF_DAY);
-        boolean hasAmPm = accessor.isSupported(ChronoField.AMPM_OF_DAY);
-        boolean hasHourAmPm = accessor.isSupported(ChronoField.HOUR_OF_AMPM);
-        boolean hasMinute = accessor.isSupported(ChronoField.MINUTE_OF_HOUR);
-        boolean hasSecond = accessor.isSupported(ChronoField.SECOND_OF_MINUTE);
+        LocalDate date;
+        LocalTime time;
         
-        if (((hasHourAmPm || hasAmPm) && !hasHour) || (!hasHour && (hasMinute || hasSecond)) || (!hasMinute && hasSecond)) {
-            throw new IllegalStateException("Incomplete date format: Partially defined time");
+        if (accessor.isSupported(ChronoField.INSTANT_SECONDS)) {
+            date = accessor.query(TemporalQueries.localDate());
+            time = accessor.query(TemporalQueries.localTime());
+        } else {
+            boolean hasMonthOrDay = accessor.isSupported(ChronoField.MONTH_OF_YEAR) || accessor.isSupported(ChronoField.DAY_OF_MONTH);
+            boolean hasHour = accessor.isSupported(ChronoField.HOUR_OF_DAY);
+            boolean hasAmPm = accessor.isSupported(ChronoField.AMPM_OF_DAY);
+            boolean hasHourAmPm = accessor.isSupported(ChronoField.HOUR_OF_AMPM);
+            boolean hasMinute = accessor.isSupported(ChronoField.MINUTE_OF_HOUR);
+            boolean hasSecond = accessor.isSupported(ChronoField.SECOND_OF_MINUTE);
+
+            if (((hasHourAmPm || hasAmPm) && !hasHour) || (!hasHour && (hasMinute || hasSecond)) || (!hasMinute && hasSecond)) {
+                throw new IllegalStateException("Incomplete date format: Partially defined time");
+            }
+
+            date = accessor.query(TemporalQueries.localDate());
+            time = accessor.query(TemporalQueries.localTime());
+
+            if (date == null && hasMonthOrDay) {
+                throw new IllegalStateException("Incomplete date format: Partially defined date");
+            }
         }
         
-        LocalDate date = accessor.query(TemporalQueries.localDate());
-        LocalTime time = accessor.query(TemporalQueries.localTime());
         ZoneId zone = accessor.query(TemporalQueries.zone());
-        
-        if (date == null && hasMonthOrDay) {
-            throw new IllegalStateException("Incomplete date format: Partially defined date");
-        }
         
         if (date == null && accessor.isSupported(ChronoField.YEAR)) date = LocalDate.of(accessor.get(ChronoField.YEAR), 1, 1);
         if (date == null) date = LocalDate.EPOCH;
@@ -163,4 +212,39 @@ public class DateFormatHelper {
         stream.forEach(sb::appendCodePoint);
         return sb.toString();
     }
+    
+    private static class Builder {
+        
+        private final List<BiConsumer<BuildContext, DateTimeFormatterBuilder>> actions;
+        private boolean hasEra;
+        
+        public Builder() {
+            this.actions = new ArrayList<>();
+            this.hasEra = false;
+            
+        }
+        
+        public void setHasEra() {
+            this.hasEra = true;
+        }
+        
+        public void add(Consumer<DateTimeFormatterBuilder> action) {
+            this.actions.add((ctx, builder) -> action.accept(builder));
+        }
+        
+        public void add(BiConsumer<BuildContext, DateTimeFormatterBuilder> action) {
+            this.actions.add(action);
+        }
+        
+        public DateTimeFormatter build(Locale locale) {
+            BuildContext ctx = new BuildContext(this.hasEra);
+            DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
+            for (BiConsumer<BuildContext, DateTimeFormatterBuilder> action : this.actions) {
+                action.accept(ctx, builder);
+            }
+            return builder.toFormatter(locale);
+        }
+    }
+    
+    private record BuildContext(boolean hasEra) {}
 }
