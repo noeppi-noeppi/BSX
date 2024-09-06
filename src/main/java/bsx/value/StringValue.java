@@ -18,6 +18,7 @@ public class StringValue implements BsValue {
     
     private final StringType type;
     private final int[] utf256;
+    private final int length;
     
     @Nullable
     private final String string;
@@ -26,6 +27,7 @@ public class StringValue implements BsValue {
         this.type = type;
         this.utf256 = string.codePoints().flatMap(cp -> IntStream.of(0, 0, 0, 0, 0, 0, 0, cp)).toArray();
         this.string = string;
+        this.length = (int) string.codePoints().count();
         this.validateString();
     }
     
@@ -49,6 +51,7 @@ public class StringValue implements BsValue {
             sb.appendCodePoint(this.utf256[i + 7]);
         }
         this.string = sb == null ? null : sb.toString();
+        this.length = utf256.length / 8;
         this.validateString();
     }
     
@@ -69,7 +72,11 @@ public class StringValue implements BsValue {
     public IntStream getRaw() {
         return Arrays.stream(this.utf256);
     }
-
+    
+    public int getLength() {
+        return this.length;
+    }
+    
     public byte[] getBytes() {
         if (this.string != null && this.type.charset != null) {
             ByteBuffer buffer = this.type.charset.encode(this.string);

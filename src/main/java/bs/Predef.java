@@ -32,7 +32,7 @@ public final class Predef {
         if (value instanceof ArrayValue av) {
             return av.length();
         } else if (value instanceof StringValue sv) {
-            return sv.getRaw().count();
+            return sv.getLength();
         } else {
             return 0;
         }
