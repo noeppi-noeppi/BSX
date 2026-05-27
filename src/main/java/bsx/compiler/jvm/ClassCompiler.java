@@ -84,7 +84,7 @@ public class ClassCompiler {
         } else {
             if (function.modifiers().contains(MemberModifier.FINAL)) node.access |= Opcodes.ACC_FINAL;
         }
-        if ("__toString".equals(function.name()) && function.args().size() == 0 && !function.modifiers().contains(MemberModifier.STATIC)) {
+        if ("__toString".equals(function.name()) && function.args().isEmpty() && !function.modifiers().contains(MemberModifier.STATIC)) {
             // Special case: Compile PHP toString method to use the java name.
             // resolution will take care that this method can be found with __toString as well.
             node.name = "toString";

@@ -36,6 +36,7 @@ task fatjar(type: Jar) {
     with jar
 }
 build.dependsOn fatjar
+project(':RegEx').afterEvaluate { rootProject.tasks.getByName('fatjar').dependsOn(project(':RegEx').tasks.named('jar')) }
 
 task configureFatJar {
     doLast {
